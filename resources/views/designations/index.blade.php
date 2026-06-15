@@ -1,0 +1,75 @@
+@extends('layouts.app')
+@section('title', 'Designations')
+@section('page-title', 'Designations')
+
+@section('content')
+<div class="bg-white rounded-xl shadow-sm border border-gray-100">
+    <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+        <h2 class="font-semibold text-gray-800">All Designations</h2>
+        <a href="{{ route('designations.create') }}"
+           class="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition flex items-center gap-2">
+            <i class="fas fa-plus text-xs"></i> Add Designation
+        </a>
+    </div>
+    <div class="overflow-x-auto">
+        <table class="w-full text-sm text-gray-700">
+            <thead class="bg-gray-50 text-xs text-gray-500 uppercase tracking-wider">
+                <tr>
+                    <th class="px-6 py-3 text-left">#</th>
+                    <th class="px-6 py-3 text-left">Designation</th>
+                    <th class="px-6 py-3 text-left">Department</th>
+                    <th class="px-6 py-3 text-center">Employees</th>
+                    <th class="px-6 py-3 text-center">Status</th>
+                    <th class="px-6 py-3 text-center">Actions</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-50">
+                @forelse($designations as $desig)
+                <tr class="hover:bg-gray-50 transition">
+                    <td class="px-6 py-3 text-gray-400">{{ $designations->firstItem() + $loop->index }}</td>
+                    <td class="px-6 py-3 font-medium text-gray-900">{{ $desig->name }}</td>
+                    <td class="px-6 py-3">
+                        <span class="bg-blue-50 text-blue-700 text-xs px-2.5 py-1 rounded-full font-medium">{{ $desig->department->name ?? '—' }}</span>
+                    </td>
+                    <td class="px-6 py-3 text-center">
+                        <span class="bg-indigo-100 text-indigo-700 text-xs font-medium px-2.5 py-1 rounded-full">{{ $desig->employees_count }}</span>
+                    </td>
+                    <td class="px-6 py-3 text-center">
+                        <form method="POST" action="{{ route('designations.toggle-status', $desig) }}">
+                            @csrf
+                            <button type="submit"
+                                    class="px-3 py-1 rounded-full text-xs font-medium transition
+                                        {{ $desig->status === 'active'
+                                            ? 'bg-green-100 text-green-700 hover:bg-green-200'
+                                            : 'bg-red-100 text-red-700 hover:bg-red-200' }}">
+                                {{ ucfirst($desig->status) }}
+                            </button>
+                        </form>
+                    </td>
+                    <td class="px-6 py-3 text-center">
+                        <div class="flex items-center justify-center gap-2">
+                            <a href="{{ route('designations.edit', $desig) }}"
+                               class="p-1.5 rounded-lg text-gray-500 hover:bg-indigo-50 hover:text-indigo-600 transition">
+                                <i class="fas fa-pen-to-square text-sm"></i>
+                            </a>
+                            <form method="POST" action="{{ route('designations.destroy', $desig) }}"
+                                  onsubmit="return confirm('Delete this designation?')">
+                                @csrf @method('DELETE')
+                                <button type="submit" class="p-1.5 rounded-lg text-gray-500 hover:bg-red-50 hover:text-red-600 transition">
+                                    <i class="fas fa-trash text-sm"></i>
+                                </button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                @empty
+                <tr><td colspan="5" class="px-6 py-10 text-center text-gray-400">No designations found.</td></tr>
+                @endforelse
+            </tbody>
+        </table>
+    </div>
+    @if($designations->hasPages())
+    <div class="px-6 py-4 border-t border-gray-100">{{ $designations->links() }}</div>
+    @endif
+</div>
+@endsection
