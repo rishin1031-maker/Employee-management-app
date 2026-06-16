@@ -36,8 +36,10 @@
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Phone</label>
-                    <input type="text" name="phone" value="{{ old('phone') }}"
-                           class="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    <input type="text" name="phone" value="{{ old('phone', $employee->phone ?? '') }}"
+                        class="w-full px-4 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500
+                                @error('phone') border-red-400 @else border-gray-300 @enderror">
+                    @error('phone')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Gender <span class="text-red-500">*</span></label>
@@ -52,16 +54,20 @@
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Date of Birth</label>
-                    <input type="date" name="dob" value="{{ old('dob') }}"
-                           class="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    <input type="date" name="dob" value="{{ old('dob', $employee->dob ?? '') }}"
+                        class="w-full px-4 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500
+                                @error('dob') border-red-400 @else border-gray-300 @enderror">
+                    @error('dob')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Status <span class="text-red-500">*</span></label>
                     <select name="status"
-                            class="w-full px-4 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 @error('status') border-red-400 @else border-gray-300 @enderror">
-                        <option value="active"   {{ old('status', 'active') === 'active'   ? 'selected' : '' }}>Active</option>
-                        <option value="inactive" {{ old('status') === 'inactive' ? 'selected' : '' }}>Inactive</option>
+                            class="w-full px-4 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500
+                                @error('status') border-red-400 @else border-gray-300 @enderror">
+                        <option value="active"   {{ old('status', $employee->status ?? 'active') === 'active'   ? 'selected' : '' }}>Active</option>
+                        <option value="inactive" {{ old('status', $employee->status ?? '') === 'inactive' ? 'selected' : '' }}>Inactive</option>
                     </select>
+                    @error('status')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Department <span class="text-red-500">*</span></label>
