@@ -5,7 +5,7 @@
 @section('content')
 <div class="max-w-3xl">
     <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-        <form method="POST" action="{{ route('employees.update', $employee) }}" enctype="multipart/form-data" class="space-y-6">
+        <form method="POST" action="{{ route('admin.employees.update', $employee) }}" enctype="multipart/form-data" class="space-y-6">
             @csrf @method('PUT')
 
             {{-- Profile Image --}}
@@ -98,7 +98,13 @@
                 <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium px-6 py-2.5 rounded-lg transition">
                     Update Employee
                 </button>
-                <a href="{{ route('employees.index') }}" class="text-sm text-gray-500 hover:text-gray-700">Cancel</a>
+
+                <button onclick="document.getElementById('reset-modal').classList.remove('hidden')"
+                        class="bg-yellow-500 hover:bg-yellow-600 text-white text-sm font-medium px-5 py-2 rounded-lg transition">
+                    <i class="fas fa-key mr-1.5"></i> Reset Password
+                </button>
+
+                <a href="{{ route('admin.employees.index') }}" class="text-sm text-gray-500 hover:text-gray-700">Cancel</a>
             </div>
         </form>
     </div>
@@ -157,4 +163,54 @@ desigSelect.addEventListener('change', function () {
     });
 });
 </script>
+</script>
+
+{{-- Password reset modal --}}
+<div id="reset-modal"
+     class="hidden fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+    <div class="bg-white rounded-xl p-6 w-full max-w-sm shadow-xl">
+        <h3 class="font-semibold text-gray-900 mb-4">
+            Reset employee password
+        </h3>
+
+        <form method="POST"
+              action="{{ route('admin.employees.reset-password', $employee) }}"
+              class="space-y-4">
+            @csrf
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">
+                    New Password
+                </label>
+                <input type="password"
+                       name="new_password"
+                       required
+                       class="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">
+                    Confirm Password
+                </label>
+                <input type="password"
+                       name="new_password_confirmation"
+                       required
+                       class="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            </div>
+
+            <div class="flex gap-3 pt-2">
+                <button type="submit"
+                        class="flex-1 bg-yellow-500 hover:bg-yellow-600 text-white text-sm font-medium py-2.5 rounded-lg transition">
+                    Reset
+                </button>
+
+                <button type="button"
+                        onclick="document.getElementById('reset-modal').classList.add('hidden')"
+                        class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium py-2.5 rounded-lg transition">
+                    Cancel
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
 @endsection

@@ -5,7 +5,7 @@
 @section('content')
 <div class="max-w-xl">
     <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-        <form method="POST" action="{{ route('departments.update', $department) }}" class="space-y-5">
+        <form method="POST" action="{{ route('admin.departments.update', $department) }}" class="space-y-5">
             @csrf @method('PUT')
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Department Name <span class="text-red-500">*</span></label>
@@ -30,7 +30,7 @@
                 <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium px-6 py-2.5 rounded-lg transition">
                     Update Department
                 </button>
-                <a href="{{ route('departments.index') }}" class="text-sm text-gray-500 hover:text-gray-700">Cancel</a>
+                <a href="{{ route('admin.departments.index') }}" class="text-sm text-gray-500 hover:text-gray-700">Cancel</a>
             </div>
         </form>
     </div>

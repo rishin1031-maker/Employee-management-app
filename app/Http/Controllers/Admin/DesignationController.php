@@ -25,7 +25,7 @@ class DesignationController extends Controller
     public function store(StoreDesignationRequest $request)
     {
         Designation::create($request->validated());
-        return redirect()->route('designations.index')->with('success', 'Designation created successfully.');
+        return redirect()->route('admin.designations.index')->with('success', 'Designation created successfully.');
     }
 
     public function edit(Designation $designation)
@@ -37,7 +37,7 @@ class DesignationController extends Controller
     public function update(UpdateDesignationRequest $request, Designation $designation)
     {
         $designation->update($request->validated());
-        return redirect()->route('designations.index')->with('success', 'Designation updated successfully.');
+        return redirect()->route('admin.designations.index')->with('success', 'Designation updated successfully.');
     }
 
     public function destroy(Designation $designation)
@@ -46,7 +46,7 @@ class DesignationController extends Controller
             return back()->with('error', 'Cannot delete designation with assigned employees.');
         }
         $designation->delete();
-        return redirect()->route('designations.index')->with('success', 'Designation deleted successfully.');
+        return redirect()->route('admin.designations.index')->with('success', 'Designation deleted successfully.');
     }
 
     public function toggleStatus(Designation $designation)

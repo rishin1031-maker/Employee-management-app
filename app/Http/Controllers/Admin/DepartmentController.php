@@ -23,7 +23,7 @@ class DepartmentController extends Controller
     public function store(StoreDepartmentRequest $request)
     {
         Department::create($request->validated());
-        return redirect()->route('departments.index')->with('success', 'Department created successfully.');
+        return redirect()->route('admin.departments.index')->with('success', 'Department created successfully.');
     }
 
     public function edit(Department $department)
@@ -34,7 +34,7 @@ class DepartmentController extends Controller
     public function update(UpdateDepartmentRequest $request, Department $department)
     {
         $department->update($request->validated());
-        return redirect()->route('departments.index')->with('success', 'Department updated successfully.');
+        return redirect()->route('admin.departments.index')->with('success', 'Department updated successfully.');
     }
 
     public function destroy(Department $department)
@@ -43,7 +43,7 @@ class DepartmentController extends Controller
             return back()->with('error', 'Cannot delete department with assigned employees.');
         }
         $department->delete();
-        return redirect()->route('departments.index')->with('success', 'Department deleted successfully.');
+        return redirect()->route('admin.departments.index')->with('success', 'Department deleted successfully.');
     }
     
     public function toggleStatus(Department $department)

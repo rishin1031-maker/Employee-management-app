@@ -1,30 +1,103 @@
 <?php
 
+use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\Admin\AuthController;
+use App\Http\Controllers\Admin\AttendanceController as AdminAttendanceController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\DepartmentController;
 use App\Http\Controllers\Admin\DesignationController;
 use App\Http\Controllers\Admin\EmployeeController;
+use App\Http\Controllers\Admin\LeaveController as AdminLeaveController;
+use App\Http\Controllers\Admin\PayrollController;
+use App\Http\Controllers\Admin\SalaryController;
+use App\Http\Controllers\Employee\AttendanceController as EmpAttendanceController;
+use App\Http\Controllers\Employee\AuthController as EmpAuthController;
+use App\Http\Controllers\Employee\DashboardController as EmpDashboardController;
+use App\Http\Controllers\Employee\LeaveController as EmpLeaveController;
+use App\Http\Controllers\Employee\ProfileController as EmpProfileController;
 use Illuminate\Support\Facades\Route;
 
-// Guest routes
-Route::middleware('guest:admin')->group(function () {
-    Route::get('/login', [AuthController::class, 'showLogin'])->name('admin.login');
-    Route::post('/login', [AuthController::class, 'login'])->name('admin.login.post');
-});
 
-// Admin authenticated routes
-Route::middleware('admin.auth')->group(function () {
-    Route::get('/', [DashboardController::class, 'index'])->name('admin.dashboard');
-    Route::post('/logout', [AuthController::class, 'logout'])->name('admin.logout');
+Route::get('/', function () {
+    if (Auth::guard('admin')->check()) {
+        return redirect()->route('admin.dashboard');
+    }
+    if (Auth::guard('employee')->check()) {
+        return redirect()->route('employee.dashboard');
+    }
+    return redirect()->route('login');
+})->name('home');
 
-    Route::resource('departments', DepartmentController::class)->except(['show']);
-    Route::post('departments/{department}/toggle-status', [DepartmentController::class, 'toggleStatus'])
-        ->name('departments.toggle-status');
+// ─── Shared Login / Logout ───────────────────────────────────────────────────
+Route::get('/login',  [AuthController::class, 'showLogin'])->name('login');
+Route::post('/login', [AuthController::class, 'login'])->name('login.post');
+Route::post('/logout',[AuthController::class, 'logout'])->name('logout');
+
+// ─── Admin Routes ─────────────────────────────────────────────────────────────
+Route::middleware('admin.auth')->prefix('admin')->name('admin.')->group(function () {
+
+    Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
+
+    Route::resource('departments',  DepartmentController::class)->except(['show']);
+    Route::post('departments/{department}/toggle-status', [DepartmentController::class, 'toggleStatus'])->name('departments.toggle-status');
 
     Route::resource('designations', DesignationController::class)->except(['show']);
-    Route::post('designations/{designation}/toggle-status', [DesignationController::class, 'toggleStatus'])
-        ->name('designations.toggle-status');
-        
+    Route::post('designations/{designation}/toggle-status', [DesignationController::class, 'toggleStatus'])->name('designations.toggle-status');
+
     Route::resource('employees', EmployeeController::class);
+    Route::post('employees/{employee}/reset-password', [AdminAttendanceController::class, 'resetPassword'])->name('employees.reset-password');
+
+
+    // Leave management
+    Route::prefix('leave')->name('leave.')->group(function () {
+        Route::get('/',              [AdminLeaveController::class, 'index'])->name('index');
+        Route::get('/create',        [AdminLeaveController::class, 'create'])->name('create');
+        Route::post('/',             [AdminLeaveController::class, 'store'])->name('store');
+        Route::get('/{leave}',       [AdminLeaveController::class, 'show'])->name('show');
+        Route::post('/{leave}/approve', [AdminLeaveController::class, 'approve'])->name('approve');
+        Route::post('/{leave}/reject',  [AdminLeaveController::class, 'reject'])->name('reject');
+    });
+
+    // Salary management
+    Route::prefix('salary')->name('salary.')->group(function () {
+        Route::get('/',                      [SalaryController::class, 'index'])->name('index');
+        Route::get('/{employee}/manage',     [SalaryController::class, 'create'])->name('create');
+        Route::post('/{employee}',           [SalaryController::class, 'store'])->name('store');
+        Route::get('/{employee}/history',    [SalaryController::class, 'history'])->name('history');
+    });
+
+    // Payroll
+    Route::get('/payroll', [PayrollController::class, 'index'])->name('payroll.index');
+
+    // Attendance
+    Route::prefix('attendance')->name('attendance.')->group(function () {
+        Route::get('/',     [AdminAttendanceController::class, 'index'])->name('index');
+        Route::post('/mark',[AdminAttendanceController::class, 'mark'])->name('mark');
+    });
+});
+
+// ─── Employee Routes ──────────────────────────────────────────────────────────
+Route::middleware(['employee.auth'])->prefix('employee')->name('employee.')->group(function () {
+
+    // Force password change (no ForcePasswordChange middleware here)
+    Route::get('/change-password',  [EmpAuthController::class, 'showChangePassword'])->name('password.change');
+    Route::post('/change-password', [EmpAuthController::class, 'updatePassword'])->name('password.update');
+    Route::post('/logout',          [EmpAuthController::class, 'logout'])->name('logout');
+
+    // All other routes go through force.password.change
+    Route::middleware('force.password.change')->group(function () {
+        Route::get('/dashboard', [EmpDashboardController::class, 'index'])->name('dashboard');
+
+        Route::get('/profile',        [EmpProfileController::class, 'index'])->name('profile');
+        Route::post('/profile/phone', [EmpProfileController::class, 'updatePhone'])->name('profile.phone');
+
+        Route::get('/attendance',      [EmpAttendanceController::class, 'index'])->name('attendance.index');
+        Route::post('/attendance/in',  [EmpAttendanceController::class, 'checkIn'])->name('attendance.checkin');
+        Route::post('/attendance/out', [EmpAttendanceController::class, 'checkOut'])->name('attendance.checkout');
+
+        Route::get('/leave',        [EmpLeaveController::class, 'index'])->name('leave.index');
+        Route::get('/leave/apply',  [EmpLeaveController::class, 'create'])->name('leave.create');
+        Route::post('/leave',       [EmpLeaveController::class, 'store'])->name('leave.store');
+        Route::delete('/leave/{leave}/cancel', [EmpLeaveController::class, 'cancel'])->name('leave.cancel');
+    });
 });

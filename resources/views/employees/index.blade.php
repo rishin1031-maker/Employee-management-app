@@ -5,7 +5,7 @@
 @section('content')
 {{-- Filters --}}
 <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 mb-5">
-    <form method="GET" action="{{ route('employees.index') }}" class="flex flex-wrap gap-3 items-end">
+    <form method="GET" action="{{ route('admin.employees.index') }}" class="flex flex-wrap gap-3 items-end">
         <div class="flex-1 min-w-[180px]">
             <label class="block text-xs font-medium text-gray-600 mb-1">Search</label>
             <input type="text" name="search" value="{{ request('search') }}" placeholder="Name or email…"
@@ -40,7 +40,7 @@
         <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition">
             <i class="fas fa-search mr-1"></i> Filter
         </button>
-        <a href="{{ route('employees.index') }}" class="text-sm text-gray-500 hover:text-gray-700 py-2">Clear</a>
+        <a href="{{ route('admin.employees.index') }}" class="text-sm text-gray-500 hover:text-gray-700 py-2">Clear</a>
     </form>
 </div>
 
@@ -48,7 +48,7 @@
 <div class="bg-white rounded-xl shadow-sm border border-gray-100">
     <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100">
         <h2 class="font-semibold text-gray-800">All Employees <span class="text-gray-400 font-normal text-sm">({{ $employees->total() }})</span></h2>
-        <a href="{{ route('employees.create') }}"
+        <a href="{{ route('admin.employees.create') }}"
            class="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition flex items-center gap-2">
             <i class="fas fa-plus text-xs"></i> Add Employee
         </a>
@@ -57,8 +57,9 @@
         <table class="w-full text-sm text-gray-700">
             <thead class="bg-gray-50 text-xs text-gray-500 uppercase tracking-wider">
                 <tr>
+                    <th class="px-6 py-3 text-left">Emp ID</th>
                     <th class="px-6 py-3 text-left">Employee</th>
-                    <th class="px-6 py-3 text-left">Contact</th>
+                    <!-- <th class="px-6 py-3 text-left">Contact</th> -->
                     <th class="px-6 py-3 text-left">Department</th>
                     <th class="px-6 py-3 text-left">Designation</th>
                     <th class="px-6 py-3 text-center">Status</th>
@@ -71,10 +72,13 @@
                     <td class="px-6 py-3">
                         <div class="flex items-center gap-3">
                             <img src="{{ $emp->image_url }}" alt="{{ $emp->name }}"
-                                 class="w-9 h-9 rounded-full object-cover border border-gray-200">
+                                class="w-9 h-9 rounded-full object-cover border border-gray-200">
                             <div>
                                 <p class="font-medium text-gray-900">{{ $emp->name }}</p>
-                                <p class="text-xs text-gray-400">{{ ucfirst($emp->gender) }} · {{ $emp->dob ? \Carbon\Carbon::parse($emp->dob)->format('d M Y') : '—' }}</p>
+                                <p class="text-xs text-gray-400">
+                                    <span class="font-medium text-indigo-600">{{ $emp->employee_id ?? '—' }}</span>
+                                    · {{ ucfirst($emp->gender) }} · {{ $emp->dob ? \Carbon\Carbon::parse($emp->dob)->format('d M Y') : '—' }}
+                                </p>
                             </div>
                         </div>
                     </td>
@@ -92,15 +96,15 @@
                     </td>
                     <td class="px-6 py-3">
                         <div class="flex items-center justify-center gap-1">
-                            <a href="{{ route('employees.show', $emp) }}"
+                            <a href="{{ route('admin.employees.show', $emp) }}"
                                class="p-1.5 rounded-lg text-gray-500 hover:bg-blue-50 hover:text-blue-600 transition" title="View">
                                 <i class="fas fa-eye text-sm"></i>
                             </a>
-                            <a href="{{ route('employees.edit', $emp) }}"
+                            <a href="{{ route('admin.employees.edit', $emp) }}"
                                class="p-1.5 rounded-lg text-gray-500 hover:bg-indigo-50 hover:text-indigo-600 transition" title="Edit">
                                 <i class="fas fa-pen-to-square text-sm"></i>
                             </a>
-                            <form method="POST" action="{{ route('employees.destroy', $emp) }}"
+                            <form method="POST" action="{{ route('admin.employees.destroy', $emp) }}"
                                   onsubmit="return confirm('Delete {{ $emp->name }}?')">
                                 @csrf @method('DELETE')
                                 <button type="submit" class="p-1.5 rounded-lg text-gray-500 hover:bg-red-50 hover:text-red-600 transition" title="Delete">

@@ -6,7 +6,7 @@
 <div class="bg-white rounded-xl shadow-sm border border-gray-100">
     <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100">
         <h2 class="font-semibold text-gray-800">All Departments</h2>
-        <a href="{{ route('departments.create') }}"
+        <a href="{{ route('admin.departments.create') }}"
            class="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition flex items-center gap-2">
             <i class="fas fa-plus text-xs"></i> Add Department
         </a>
@@ -37,7 +37,7 @@
                         <span class="bg-indigo-100 text-indigo-700 text-xs font-medium px-2.5 py-1 rounded-full">{{ $dept->employees_count }}</span>
                     </td>
                     <td class="px-6 py-3 text-center">
-                        <form method="POST" action="{{ route('departments.toggle-status', $dept) }}">
+                        <form method="POST" action="{{ route('admin.departments.toggle-status', $dept) }}">
                             @csrf
                             <button type="submit"
                                     class="px-3 py-1 rounded-full text-xs font-medium transition
@@ -50,11 +50,11 @@
                     </td>
                     <td class="px-6 py-3 text-center">
                         <div class="flex items-center justify-center gap-2">
-                            <a href="{{ route('departments.edit', $dept) }}"
+                            <a href="{{ route('admin.departments.edit', $dept) }}"
                                class="p-1.5 rounded-lg text-gray-500 hover:bg-indigo-50 hover:text-indigo-600 transition">
                                 <i class="fas fa-pen-to-square text-sm"></i>
                             </a>
-                            <form method="POST" action="{{ route('departments.destroy', $dept) }}"
+                            <form method="POST" action="{{ route('admin.departments.destroy', $dept) }}"
                                   onsubmit="return confirm('Delete this department?')">
                                 @csrf @method('DELETE')
                                 <button type="submit" class="p-1.5 rounded-lg text-gray-500 hover:bg-red-50 hover:text-red-600 transition">
