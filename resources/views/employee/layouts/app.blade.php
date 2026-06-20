@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>@yield('title', 'My Portal') — EMS</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
 </head>
 <body class="bg-gray-100 font-sans">
@@ -51,14 +52,21 @@
     </aside>
 
     <div class="flex-1 flex flex-col overflow-hidden">
-        <header class="bg-white shadow-sm px-6 py-4 flex items-center justify-between">
-            <h1 class="text-lg font-semibold text-gray-800">@yield('page-title', 'Dashboard')</h1>
+    <header class="bg-white shadow-sm px-6 py-4 flex items-center justify-between">
+        <h1 class="text-lg font-semibold text-gray-800">@yield('page-title', 'Dashboard')</h1>
+
+        <div class="flex items-center gap-4">
+            {{-- Bell --}}
+            <x-notification-bell guard="employee" />
+
+            {{-- Employee avatar --}}
             <div class="flex items-center gap-3">
                 <img src="{{ Auth::guard('employee')->user()->image_url }}"
-                     class="w-8 h-8 rounded-full object-cover border border-gray-200">
+                    class="w-8 h-8 rounded-full object-cover border border-gray-200">
                 <span class="text-sm text-gray-700">{{ Auth::guard('employee')->user()->name }}</span>
             </div>
-        </header>
+        </div>
+    </header>
 
         <main class="flex-1 overflow-y-auto p-6">
             @if(session('success'))

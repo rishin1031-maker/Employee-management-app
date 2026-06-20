@@ -62,7 +62,7 @@ class LeaveController extends Controller
                          ->withInput();
         }
 
-        LeaveRequest::create([
+        $leaveRequest = LeaveRequest::create([
             'employee_id' => $employee->id,
             'type'        => $request->type,
             'from_date'   => $request->from_date,
@@ -71,6 +71,7 @@ class LeaveController extends Controller
             'reason'      => $request->reason,
             'status'      => 'pending',
         ]);
+        \App\Jobs\SendLeaveAppliedJob::dispatch($leaveRequest->load('employee'));
 
         return redirect()->route('employee.leave.index')
             ->with('success', 'Leave request submitted successfully.');

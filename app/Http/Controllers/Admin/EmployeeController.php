@@ -63,6 +63,7 @@ class EmployeeController extends Controller
 
         // After creating employee, init leave balance
         $employee = Employee::create($data);
+        \App\Jobs\SendWelcomeEmailJob::dispatch($employee, 'password123');
         \App\Models\LeaveBalance::create([
             'employee_id'  => $employee->id,
             'year'         => now()->year,

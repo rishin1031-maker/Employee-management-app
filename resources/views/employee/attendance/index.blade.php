@@ -43,28 +43,60 @@
                     <th class="px-6 py-3 text-left">Date</th>
                     <th class="px-6 py-3 text-left">Check In</th>
                     <th class="px-6 py-3 text-left">Check Out</th>
+                    <th class="px-6 py-3 text-left">Breaks</th>
                     <th class="px-6 py-3 text-left">Hours</th>
                     <th class="px-6 py-3 text-center">Status</th>
                     <th class="px-6 py-3 text-left">Marked by</th>
                 </tr>
             </thead>
             <tbody class="divide-y divide-gray-50">
-                @forelse($attendances as $att)
+            @forelse($attendances as $att)
                 <tr class="hover:bg-gray-50">
                     <td class="px-6 py-3 font-medium">{{ $att->date->format('D, d M Y') }}</td>
                     <td class="px-6 py-3">{{ $att->check_in ? $att->check_in->format('h:i A') : '—' }}</td>
                     <td class="px-6 py-3">{{ $att->check_out ? $att->check_out->format('h:i A') : '—' }}</td>
-                    <td class="px-6 py-3">{{ $att->hours_worked ?? '—' }}</td>
+                    <td class="px-6 py-3">
+                        @if($att->breaks->count())
+                            <div class="space-y-1">
+                                @foreach($att->breaks as $b)
+                                <div class="text-xs text-gray-600 flex items-center gap-1.5">
+                                    <i class="fas fa-mug-hot text-orange-400 text-xs"></i>
+                                    {{ $b->break_out->format('h:i A') }}
+                                    →
+                                    {{ $b->break_in ? $b->break_in->format('h:i A') : '<span class="text-orange-500">Ongoing</span>' }}
+                                    @if($b->break_in)
+                                        <span class="text-gray-400">({{ $b->duration_label }})</span>
+                                    @endif
+                                </div>
+                                @endforeach
+                                <p class="text-xs text-red-500 font-medium">
+                                    Total: {{ $att->total_break_minutes }}m deducted
+                                </p>
+                            </div>
+                        @else
+                            <span class="text-gray-400 text-xs">No breaks</span>
+                        @endif
+                    </td>
+                    <td class="px-6 py-3">
+                        @if($att->net_hours_worked)
+                            <p class="font-medium text-green-700">{{ $att->net_hours_worked }}</p>
+                            @if($att->hours_worked !== $att->net_hours_worked)
+                                <p class="text-xs text-gray-400">Gross: {{ $att->hours_worked }}</p>
+                            @endif
+                        @else
+                            —
+                        @endif
+                    </td>
                     <td class="px-6 py-3 text-center">
                         <span class="px-2.5 py-1 rounded-full text-xs font-medium
                             {{ $att->status === 'present' ? 'bg-green-100 text-green-700' : ($att->status === 'absent' ? 'bg-red-100 text-red-700' : 'bg-yellow-100 text-yellow-700') }}">
                             {{ ucfirst(str_replace('_',' ',$att->status)) }}
                         </span>
                     </td>
-                    <td class="px-6 py-3 capitalize text-gray-500">{{ $att->marked_by }}</td>
+                    <td class="px-6 py-3 capitalize text-gray-500 text-sm">{{ $att->marked_by }}</td>
                 </tr>
                 @empty
-                <tr><td colspan="6" class="px-6 py-10 text-center text-gray-400">No attendance records for this month.</td></tr>
+                <tr><td colspan="7" class="px-6 py-10 text-center text-gray-400">No attendance records for this month.</td></tr>
                 @endforelse
             </tbody>
         </table>

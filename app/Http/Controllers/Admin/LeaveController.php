@@ -52,6 +52,7 @@ class LeaveController extends Controller
             'actioned_by' => Auth::guard('admin')->id(),
             'actioned_at' => now(),
         ]);
+        \App\Jobs\SendLeaveStatusJob::dispatch($leave->fresh()->load('employee'));
 
         // Deduct from leave balance
         $balance = LeaveBalance::firstOrCreate(
@@ -79,6 +80,7 @@ class LeaveController extends Controller
             'actioned_by' => Auth::guard('admin')->id(),
             'actioned_at' => now(),
         ]);
+        \App\Jobs\SendLeaveStatusJob::dispatch($leave->fresh()->load('employee'));
 
         return redirect()->route('admin.leave.index')->with('success', 'Leave rejected.');
     }

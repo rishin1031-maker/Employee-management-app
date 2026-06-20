@@ -134,9 +134,74 @@
                     <td class="px-5 py-3 text-center"><span class="bg-yellow-100 text-yellow-700 text-xs font-medium px-2.5 py-1 rounded-full">{{ $row['half_day'] }}</span></td>
                     <td class="px-5 py-3 text-center"><span class="bg-blue-100 text-blue-700 text-xs font-medium px-2.5 py-1 rounded-full">{{ $row['on_leave'] }}</span></td>
                     <td class="px-5 py-3 text-center"><span class="bg-gray-100 text-gray-600 text-xs font-medium px-2.5 py-1 rounded-full">{{ $row['not_marked'] }}</span></td>
-                    <td class="px-5 py-3 text-center">
-                        <a href="{{ route('admin.attendance.index', ['view' => 'monthly', 'month' => $month, 'employee_id' => $row['employee']->id]) }}"
-                           class="text-xs text-indigo-600 hover:underline">View</a>
+                    <td class="px-5 py-3">
+                        <div class="space-y-2">
+                            {{-- Existing mark attendance form --}}
+                            <form method="POST" action="{{ route('admin.attendance.mark') }}" class="flex items-center gap-2 flex-wrap">
+                                @csrf
+                                <input type="hidden" name="employee_id" value="{{ $emp->id }}">
+                                <input type="hidden" name="date" value="{{ $date }}">
+                                <select name="status" class="px-2 py-1.5 border border-gray-300 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                                    @foreach(['present','absent','half_day','on_leave'] as $s)
+                                        <option value="{{ $s }}" {{ $att?->status === $s ? 'selected' : '' }}>
+                                            {{ ucfirst(str_replace('_',' ',$s)) }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                                <input type="time" name="check_in"  value="{{ $att?->check_in?->format('H:i') }}"
+                                    class="px-2 py-1.5 border border-gray-300 rounded-lg text-xs w-24">
+                                <input type="time" name="check_out" value="{{ $att?->check_out?->format('H:i') }}"
+                                    class="px-2 py-1.5 border border-gray-300 rounded-lg text-xs w-24">
+                                <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs px-3 py-1.5 rounded-lg transition">Save</button>
+                            </form>
+
+                            {{-- Break management (only if attendance exists) --}}
+                            @if($att)
+                                {{-- Show existing breaks --}}
+                                @if($att->breaks->count())
+                                <div class="space-y-1 pl-1">
+                                    @foreach($att->breaks as $b)
+                                    <div class="flex items-center gap-2 text-xs text-gray-600">
+                                        <i class="fas fa-mug-hot text-orange-400"></i>
+                                        {{ $b->break_out->format('h:i A') }} →
+                                        {{ $b->break_in ? $b->break_in->format('h:i A') : '<span class="text-orange-500 font-medium">Ongoing</span>' }}
+                                        @if($b->break_in)
+                                            <span class="text-gray-400">({{ $b->duration_label }})</span>
+                                        @endif
+                                        <form method="POST" action="{{ route('admin.attendance.break.delete', $b) }}">
+                                            @csrf @method('DELETE')
+                                            <button type="submit" class="text-red-400 hover:text-red-600 ml-1" title="Remove break">
+                                                <i class="fas fa-times text-xs"></i>
+                                            </button>
+                                        </form>
+                                    </div>
+                                    @endforeach
+                                    <p class="text-xs text-red-400 font-medium pl-1">
+                                        Total break: {{ $att->total_break_minutes }}m
+                                        @if($att->net_hours_worked) | Net: {{ $att->net_hours_worked }} @endif
+                                    </p>
+                                </div>
+                                @endif
+
+                                {{-- Add break form --}}
+                                <form method="POST" action="{{ route('admin.attendance.break.add') }}"
+                                    class="flex items-center gap-2 flex-wrap border-t border-gray-100 pt-2">
+                                    @csrf
+                                    <input type="hidden" name="attendance_id" value="{{ $att->id }}">
+                                    <span class="text-xs text-gray-500 font-medium">
+                                        <i class="fas fa-mug-hot text-orange-400"></i> Add break:
+                                    </span>
+                                    <input type="time" name="break_out" placeholder="Out"
+                                        class="px-2 py-1.5 border border-orange-200 rounded-lg text-xs w-24 focus:outline-none focus:ring-2 focus:ring-orange-400">
+                                    <input type="time" name="break_in" placeholder="In"
+                                        class="px-2 py-1.5 border border-orange-200 rounded-lg text-xs w-24 focus:outline-none focus:ring-2 focus:ring-orange-400">
+                                    <button type="submit"
+                                            class="bg-orange-400 hover:bg-orange-500 text-white text-xs px-3 py-1.5 rounded-lg transition">
+                                        Add
+                                    </button>
+                                </form>
+                            @endif
+                        </div>
                     </td>
                 </tr>
                 @empty

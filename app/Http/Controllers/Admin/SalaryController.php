@@ -67,6 +67,8 @@ class SalaryController extends Controller
             'gross_salary' => $gross,
             'net_salary'   => $net,
         ]));
+        $salary->refresh();
+        \App\Jobs\SendSalaryUpdatedJob::dispatch($employee, $salary);
 
         return redirect()->route('admin.salary.index')
             ->with('success', "Salary updated for {$employee->name}.");

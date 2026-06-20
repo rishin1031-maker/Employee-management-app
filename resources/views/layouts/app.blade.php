@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>@yield('title', 'EMS Admin')</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
 </head>
 <body class="bg-gray-100 font-sans">
@@ -80,12 +81,15 @@
         <header class="bg-white shadow-sm px-6 py-4 flex items-center justify-between">
             <h1 class="text-lg font-semibold text-gray-800">@yield('page-title', 'Dashboard')</h1>
 
-            <div class="flex items-center gap-5">
-                {{-- Live Date & Time --}}
+            <div class="flex items-center gap-4">
+                {{-- Live clock --}}
                 <div class="text-right hidden sm:block">
                     <p id="live-time" class="text-sm font-semibold text-gray-800"></p>
                     <p id="live-date" class="text-xs text-gray-400"></p>
                 </div>
+
+                {{-- Bell --}}
+                <x-notification-bell guard="admin" />
 
                 {{-- Admin avatar --}}
                 <div class="flex items-center gap-3">

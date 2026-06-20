@@ -12,28 +12,71 @@
             <p class="text-sm text-gray-500">{{ $employee->employee_id }} · {{ $employee->designation->name ?? '—' }}</p>
         </div>
     </div>
-    <div class="flex gap-3">
+    <div class="flex gap-3 flex-wrap">
         @if(!$employee->todayAttendance)
+            {{-- No attendance yet --}}
             <form method="POST" action="{{ route('employee.attendance.checkin') }}">
                 @csrf
-                <button type="submit" class="bg-green-600 hover:bg-green-700 text-white text-sm font-medium px-5 py-2 rounded-lg transition flex items-center gap-2">
+                <button type="submit"
+                        class="bg-green-600 hover:bg-green-700 text-white text-sm font-medium px-5 py-2 rounded-lg transition flex items-center gap-2">
                     <i class="fas fa-circle-check"></i> Check In
                 </button>
             </form>
-        @elseif(!$employee->todayAttendance->check_out)
-            <div class="text-xs text-gray-500 text-right">
-                <p>Checked in at {{ $employee->todayAttendance->check_in->format('h:i A') }}</p>
-            </div>
+
+        @elseif($employee->todayAttendance && !$employee->todayAttendance->check_out)
+            @php $att = $employee->todayAttendance; $att->load('breaks'); @endphp
+
+            {{-- Check out --}}
             <form method="POST" action="{{ route('employee.attendance.checkout') }}">
                 @csrf
-                <button type="submit" class="bg-red-500 hover:bg-red-600 text-white text-sm font-medium px-5 py-2 rounded-lg transition flex items-center gap-2">
+                <button type="submit"
+                        class="bg-red-500 hover:bg-red-600 text-white text-sm font-medium px-5 py-2 rounded-lg transition flex items-center gap-2">
                     <i class="fas fa-circle-xmark"></i> Check Out
                 </button>
             </form>
+
+            {{-- Break buttons --}}
+            @if($att->on_break)
+                <form method="POST" action="{{ route('employee.attendance.breakin') }}">
+                    @csrf
+                    <button type="submit"
+                            class="bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium px-5 py-2 rounded-lg transition flex items-center gap-2">
+                        <i class="fas fa-mug-hot"></i> End Break
+                    </button>
+                </form>
+                <span class="text-xs text-orange-500 font-medium self-center flex items-center gap-1">
+                    <i class="fas fa-circle animate-pulse"></i> On break since {{ $att->activeBreak?->break_out?->format('h:i A') }}
+                </span>
+            @else
+                <form method="POST" action="{{ route('employee.attendance.breakout') }}">
+                    @csrf
+                    <button type="submit"
+                            class="bg-orange-400 hover:bg-orange-500 text-white text-sm font-medium px-5 py-2 rounded-lg transition flex items-center gap-2">
+                        <i class="fas fa-mug-hot"></i> Take Break
+                    </button>
+                </form>
+            @endif
+
+            {{-- Time info --}}
+            <div class="text-xs text-gray-500 self-center">
+                <p>In: {{ $att->check_in->format('h:i A') }}</p>
+                @if($att->breaks->count())
+                    <p>Breaks: {{ $att->breaks->count() }}
+                    ({{ $att->total_break_minutes }}m total)</p>
+                @endif
+            </div>
+
         @else
+            {{-- Checked out --}}
+            @php $att = $employee->todayAttendance; $att->load('breaks'); @endphp
             <div class="text-xs text-gray-500 text-right">
-                <p>In: {{ $employee->todayAttendance->check_in->format('h:i A') }} · Out: {{ $employee->todayAttendance->check_out->format('h:i A') }}</p>
-                <p class="text-green-600 font-medium">{{ $employee->todayAttendance->hours_worked }} worked today</p>
+                <p>In: {{ $att->check_in->format('h:i A') }} · Out: {{ $att->check_out->format('h:i A') }}</p>
+                <p class="text-green-600 font-medium">
+                    Net: {{ $att->net_hours_worked }}
+                    @if($att->total_break_minutes > 0)
+                        <span class="text-gray-400">({{ $att->total_break_minutes }}m break deducted)</span>
+                    @endif
+                </p>
             </div>
         @endif
     </div>

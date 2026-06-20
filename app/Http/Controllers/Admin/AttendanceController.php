@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Attendance;
 use App\Models\Employee;
 use Illuminate\Http\Request;
+use App\Models\AttendanceBreak;
 
 class AttendanceController extends Controller
 {
@@ -16,7 +17,7 @@ class AttendanceController extends Controller
         $month      = $request->get('month', now()->format('Y-m'));
     
         $employees = Employee::where('status', 'active')
-            ->with(['attendances' => fn($q) => $q->where('date', $date)])
+            ->with(['attendances' => fn($q) => $q->where('date', $date)->with('breaks')])
             ->orderBy('name')
             ->get();
     
@@ -88,5 +89,33 @@ class AttendanceController extends Controller
         ]);
 
         return back()->with('success', "Password reset for {$employee->name}. They will be prompted to change it on next login.");
+    }
+
+    public function addBreak(Request $request)
+    {
+        $request->validate([
+            'attendance_id' => 'required|exists:attendances,id',
+            'break_out'     => 'required|date_format:H:i',
+            'break_in'      => 'nullable|date_format:H:i|after:break_out',
+        ]);
+
+        $attendance = \App\Models\Attendance::findOrFail($request->attendance_id);
+        $date       = $attendance->date->toDateString();
+
+        \App\Models\AttendanceBreak::create([
+            'attendance_id' => $attendance->id,
+            'employee_id'   => $attendance->employee_id,
+            'break_out'     => $date . ' ' . $request->break_out . ':00',
+            'break_in'      => $request->break_in ? $date . ' ' . $request->break_in . ':00' : null,
+            'marked_by'     => 'admin',
+        ]);
+
+        return back()->with('success', 'Break added successfully.');
+    }
+
+    public function deleteBreak(\App\Models\AttendanceBreak $break)
+    {
+        $break->delete();
+        return back()->with('success', 'Break removed.');
     }
 }
