@@ -3,12 +3,15 @@
 namespace App\Http\Controllers\Employee;
 
 use App\Http\Controllers\Controller;
+use App\Services\EmployeeService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 
 class AuthController extends Controller
 {
+    public function __construct(private EmployeeService $employeeService) {}
+
     public function showChangePassword()
     {
         return view('employee.auth.change-password');
@@ -19,9 +22,6 @@ class AuthController extends Controller
         $request->validate([
             'current_password' => 'required',
             'password'         => 'required|min:8|confirmed',
-        ], [
-            'password.confirmed' => 'New password and confirmation do not match.',
-            'password.min'       => 'Password must be at least 8 characters.',
         ]);
 
         $employee = Auth::guard('employee')->user();
@@ -30,10 +30,7 @@ class AuthController extends Controller
             return back()->withErrors(['current_password' => 'Current password is incorrect.']);
         }
 
-        $employee->update([
-            'password'             => Hash::make($request->password),
-            'must_change_password' => false,
-        ]);
+        $this->employeeService->changePassword($employee, $request->password);
 
         return redirect()->route('employee.dashboard')
             ->with('success', 'Password changed successfully.');

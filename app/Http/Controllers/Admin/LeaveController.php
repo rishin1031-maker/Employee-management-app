@@ -3,32 +3,23 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\Employee;
-use App\Models\LeaveBalance;
 use App\Models\LeaveRequest;
+use App\Services\EmployeeService;
+use App\Services\LeaveService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Carbon\Carbon;
 
 class LeaveController extends Controller
 {
-    public function index(Request $request)
+    public function __construct(
+        private LeaveService    $leaveService,
+        private EmployeeService $employeeService,
+    ) {}
+
+    public function index()
     {
-        $query = LeaveRequest::with(['employee.department', 'actionedBy']);
-
-        if ($request->status) {
-            $query->where('status', $request->status);
-        }
-        if ($request->employee_id) {
-            $query->where('employee_id', $request->employee_id);
-        }
-        if ($request->type) {
-            $query->where('type', $request->type);
-        }
-
-        $leaves    = $query->latest()->paginate(15)->withQueryString();
-        $employees = Employee::orderBy('name')->get();
-
+        $leaves    = $this->leaveService->getPaginatedForAdmin(request()->all());
+        $employees = $this->employeeService->getActiveEmployees() ?? collect();
         return view('admin.leave.index', compact('leaves', 'employees'));
     }
 
@@ -46,23 +37,7 @@ class LeaveController extends Controller
             return back()->with('error', 'This request has already been actioned.');
         }
 
-        $leave->update([
-            'status'      => 'approved',
-            'admin_note'  => $request->admin_note,
-            'actioned_by' => Auth::guard('admin')->id(),
-            'actioned_at' => now(),
-        ]);
-        \App\Jobs\SendLeaveStatusJob::dispatch($leave->fresh()->load('employee'));
-
-        // Deduct from leave balance
-        $balance = LeaveBalance::firstOrCreate(
-            ['employee_id' => $leave->employee_id, 'year' => $leave->from_date->year],
-            ['casual_total' => 12, 'sick_total' => 10, 'annual_total' => 15]
-        );
-
-        $col = $leave->type . '_used';
-        $balance->increment($col, $leave->days);
-
+        $this->leaveService->approveLeave($leave->id, Auth::guard('admin')->id(), $request->admin_note);
         return redirect()->route('admin.leave.index')->with('success', 'Leave approved successfully.');
     }
 
@@ -74,20 +49,13 @@ class LeaveController extends Controller
             return back()->with('error', 'This request has already been actioned.');
         }
 
-        $leave->update([
-            'status'      => 'rejected',
-            'admin_note'  => $request->admin_note,
-            'actioned_by' => Auth::guard('admin')->id(),
-            'actioned_at' => now(),
-        ]);
-        \App\Jobs\SendLeaveStatusJob::dispatch($leave->fresh()->load('employee'));
-
+        $this->leaveService->rejectLeave($leave->id, Auth::guard('admin')->id(), $request->admin_note);
         return redirect()->route('admin.leave.index')->with('success', 'Leave rejected.');
     }
 
     public function create()
     {
-        $employees = Employee::where('status', 'active')->orderBy('name')->get();
+        $employees = $this->employeeService->getActiveEmployees() ?? collect();
         return view('admin.leave.create', compact('employees'));
     }
 
@@ -102,29 +70,7 @@ class LeaveController extends Controller
             'status'      => 'required|in:pending,approved,rejected',
         ]);
 
-        $days = Carbon::parse($request->from_date)->diffInWeekdays(Carbon::parse($request->to_date)) + 1;
-
-        $leave = LeaveRequest::create([
-            'employee_id'      => $request->employee_id,
-            'type'             => $request->type,
-            'from_date'        => $request->from_date,
-            'to_date'          => $request->to_date,
-            'days'             => $days,
-            'reason'           => $request->reason,
-            'status'           => $request->status,
-            'actioned_by'      => $request->status !== 'pending' ? Auth::guard('admin')->id() : null,
-            'actioned_at'      => $request->status !== 'pending' ? now() : null,
-            'created_by_admin' => true,
-        ]);
-
-        if ($request->status === 'approved') {
-            $balance = LeaveBalance::firstOrCreate(
-                ['employee_id' => $request->employee_id, 'year' => now()->year],
-                ['casual_total' => 12, 'sick_total' => 10, 'annual_total' => 15]
-            );
-            $balance->increment($request->type . '_used', $days);
-        }
-
+        $this->leaveService->createLeaveByAdmin($request->all(), Auth::guard('admin')->id());
         return redirect()->route('admin.leave.index')->with('success', 'Leave created successfully.');
     }
 }

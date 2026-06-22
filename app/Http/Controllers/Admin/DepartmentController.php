@@ -6,12 +6,15 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreDepartmentRequest;
 use App\Http\Requests\UpdateDepartmentRequest;
 use App\Models\Department;
+use App\Services\DepartmentService;
 
 class DepartmentController extends Controller
 {
+    public function __construct(private DepartmentService $departmentService) {}
+
     public function index()
     {
-        $departments = Department::withCount(['designations', 'employees'])->latest()->paginate(10);
+        $departments = $this->departmentService->getPaginated();
         return view('departments.index', compact('departments'));
     }
 
@@ -22,8 +25,9 @@ class DepartmentController extends Controller
 
     public function store(StoreDepartmentRequest $request)
     {
-        Department::create($request->validated());
-        return redirect()->route('admin.departments.index')->with('success', 'Department created successfully.');
+        $this->departmentService->create($request->validated());
+        return redirect()->route('admin.departments.index')
+            ->with('success', 'Department created successfully.');
     }
 
     public function edit(Department $department)
@@ -33,25 +37,25 @@ class DepartmentController extends Controller
 
     public function update(UpdateDepartmentRequest $request, Department $department)
     {
-        $department->update($request->validated());
-        return redirect()->route('admin.departments.index')->with('success', 'Department updated successfully.');
+        $this->departmentService->update($department->id, $request->validated());
+        return redirect()->route('admin.departments.index')
+            ->with('success', 'Department updated successfully.');
     }
 
     public function destroy(Department $department)
     {
-        if ($department->employees()->count() > 0) {
-            return back()->with('error', 'Cannot delete department with assigned employees.');
+        try {
+            $this->departmentService->delete($department->id);
+            return redirect()->route('admin.departments.index')
+                ->with('success', 'Department deleted successfully.');
+        } catch (\Exception $e) {
+            return back()->with('error', $e->getMessage());
         }
-        $department->delete();
-        return redirect()->route('admin.departments.index')->with('success', 'Department deleted successfully.');
     }
-    
+
     public function toggleStatus(Department $department)
     {
-        $department->update([
-            'status' => $department->status === 'active' ? 'inactive' : 'active'
-        ]);
-    
-        return back()->with('success', "Department marked as {$department->status}.");
+        $this->departmentService->toggleStatus($department->id);
+        return back()->with('success', "Department status updated.");
     }
 }

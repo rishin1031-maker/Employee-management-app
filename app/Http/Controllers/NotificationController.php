@@ -2,11 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\NotificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class NotificationController extends Controller
 {
+    public function __construct(private NotificationService $notificationService) {}
+
     private function getUser()
     {
         return Auth::guard('admin')->user()
@@ -16,24 +19,21 @@ class NotificationController extends Controller
     public function index()
     {
         $user          = $this->getUser();
-        $notifications = $user->notifications()->paginate(20);
-        $user->unreadNotifications->markAsRead();
+        $notifications = $this->notificationService->getForUser($user);
+        $guard         = Auth::guard('admin')->check() ? 'admin' : 'employee';
 
-        $guard = Auth::guard('admin')->check() ? 'admin' : 'employee';
         return view('notifications.index', compact('notifications', 'guard'));
     }
 
     public function markAllRead()
     {
-        $this->getUser()->unreadNotifications->markAsRead();
+        $this->notificationService->markAllRead($this->getUser());
         return back()->with('success', 'All notifications marked as read.');
     }
 
     public function markRead(string $id)
     {
-        $user         = $this->getUser();
-        $notification = $user->notifications()->findOrFail($id);
-        $notification->markAsRead();
-        return redirect($notification->data['url'] ?? back()->getTargetUrl());
+        $url = $this->notificationService->markReadAndGetUrl($this->getUser(), $id);
+        return redirect($url);
     }
 }

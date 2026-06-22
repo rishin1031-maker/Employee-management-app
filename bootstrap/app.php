@@ -18,6 +18,9 @@ return Application::configure(basePath: dirname(__DIR__))
             'force.password.change'=> \App\Http\Middleware\ForcePasswordChange::class,
         ]);
     })
+    ->withProviders([                                      // ← ADD THIS
+        App\Providers\RepositoryServiceProvider::class,
+    ])
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(
             fn (Request $request) => $request->is('api/*'),

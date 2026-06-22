@@ -3,40 +3,45 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\Attendance;
-use App\Models\Department;
-use App\Models\Designation;
-use App\Models\Employee;
-use App\Models\LeaveRequest;
+use App\Services\AttendanceService;
+use App\Services\DepartmentService;
+use App\Services\DesignationService;
+use App\Services\EmployeeService;
+use App\Services\LeaveService;
 
 class DashboardController extends Controller
 {
+    public function __construct(
+        private EmployeeService    $employeeService,
+        private DepartmentService  $departmentService,
+        private DesignationService $designationService,
+        private LeaveService       $leaveService,
+        private AttendanceService  $attendanceService,
+    ) {}
+
     public function index()
     {
-        $totalEmployees    = Employee::count();
-        $activeEmployees   = Employee::where('status', 'active')->count();
-        $inactiveEmployees = Employee::where('status', 'inactive')->count();
-        $totalDepartments  = Department::count();
-        $totalDesignations = Designation::count();
-        $pendingLeaves     = LeaveRequest::where('status', 'pending')->count();
+        $employeeStats = $this->employeeService->getDashboardStats();
+        $activeCount   = $employeeStats['active'];
 
-        // Today's attendance summary
-        $todayPresent   = Attendance::where('date', today())->where('status', 'present')->count();
-        $todayAbsent    = Attendance::where('date', today())->where('status', 'absent')->count();
-        $todayNotMarked = $activeEmployees - Attendance::where('date', today())->count();
+        $totalDepartments  = $this->departmentService->getPaginated(1000)->total();
+        $totalDesignations = $this->designationService->getPaginated(1000)->total();
+        $pendingLeaves     = $this->leaveService->getPendingCount();
+        $recentLeaves      = $this->leaveService->getRecentPending(5);
+        $todayStats        = $this->attendanceService->getTodayStats($activeCount);
 
-        $recentEmployees = Employee::with(['department', 'designation'])
-                            ->latest()->take(5)->get();
-
-        $recentLeaves = LeaveRequest::with('employee')
-                            ->where('status', 'pending')
-                            ->latest()->take(5)->get();
-
-        return view('dashboard.index', compact(
-            'totalEmployees', 'activeEmployees', 'inactiveEmployees',
-            'totalDepartments', 'totalDesignations', 'pendingLeaves',
-            'todayPresent', 'todayAbsent', 'todayNotMarked',
-            'recentEmployees', 'recentLeaves'
-        ));
+        return view('dashboard.index', [
+            'totalEmployees'    => $employeeStats['total'],
+            'activeEmployees'   => $activeCount,
+            'inactiveEmployees' => $employeeStats['inactive'],
+            'totalDepartments'  => $totalDepartments,
+            'totalDesignations' => $totalDesignations,
+            'pendingLeaves'     => $pendingLeaves,
+            'todayPresent'      => $todayStats['present'],
+            'todayAbsent'       => $todayStats['absent'],
+            'todayNotMarked'    => $todayStats['not_marked'],
+            'recentEmployees'   => $employeeStats['recent'],
+            'recentLeaves'      => $recentLeaves,
+        ]);
     }
 }

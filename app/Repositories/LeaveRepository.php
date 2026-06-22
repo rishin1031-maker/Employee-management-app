@@ -1,0 +1,109 @@
+<?php
+
+namespace App\Repositories;
+
+use App\Contracts\Repositories\LeaveRepositoryInterface;
+use App\Models\LeaveBalance;
+use App\Models\LeaveRequest;
+use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Pagination\LengthAwarePaginator;
+
+class LeaveRepository extends BaseRepository implements LeaveRepositoryInterface
+{
+    public function __construct(LeaveRequest $model)
+    {
+        parent::__construct($model);
+    }
+
+    public function paginateWithFilters(array $filters, int $perPage = 15): LengthAwarePaginator
+    {
+        $query = LeaveRequest::with(['employee.department', 'actionedBy']);
+
+        if (!empty($filters['status'])) {
+            $query->where('status', $filters['status']);
+        }
+
+        if (!empty($filters['employee_id'])) {
+            $query->where('employee_id', $filters['employee_id']);
+        }
+
+        if (!empty($filters['type'])) {
+            $query->where('type', $filters['type']);
+        }
+
+        return $query->latest()->paginate($perPage)->withQueryString();
+    }
+
+    public function getEmployeeLeaves(int $employeeId, int $perPage = 10): LengthAwarePaginator
+    {
+        return LeaveRequest::where('employee_id', $employeeId)
+                           ->latest()
+                           ->paginate($perPage);
+    }
+
+    public function getPendingCount(): int
+    {
+        return LeaveRequest::where('status', 'pending')->count();
+    }
+
+    public function getRecentPending(int $limit = 5): Collection
+    {
+        return LeaveRequest::with('employee')
+                           ->where('status', 'pending')
+                           ->latest()
+                           ->take($limit)
+                           ->get();
+    }
+
+    public function findOrCreateBalance(int $employeeId, int $year): LeaveBalance
+    {
+        return LeaveBalance::firstOrCreate(
+            ['employee_id' => $employeeId, 'year' => $year],
+            [
+                'casual_total' => 12, 'casual_used' => 0,
+                'sick_total'   => 10, 'sick_used'   => 0,
+                'annual_total' => 15, 'annual_used' => 0,
+            ]
+        );
+    }
+
+    public function incrementUsed(int $employeeId, string $type, int $days, int $year): void
+    {
+        $balance = $this->findOrCreateBalance($employeeId, $year);
+        $balance->increment($type . '_used', $days);
+    }
+
+    public function hasOverlap(int $employeeId, string $fromDate, string $toDate): bool
+    {
+        return LeaveRequest::where('employee_id', $employeeId)
+            ->whereIn('status', ['pending', 'approved'])
+            ->where(function ($q) use ($fromDate, $toDate) {
+                $q->whereBetween('from_date', [$fromDate, $toDate])
+                  ->orWhereBetween('to_date', [$fromDate, $toDate]);
+            })->exists();
+    }
+
+    public function approve(int $id, int $adminId, ?string $note): LeaveRequest
+    {
+        $leave = $this->findOrFail($id);
+        $leave->update([
+            'status'      => 'approved',
+            'admin_note'  => $note,
+            'actioned_by' => $adminId,
+            'actioned_at' => now(),
+        ]);
+        return $leave->fresh()->load(['employee', 'actionedBy']);
+    }
+
+    public function reject(int $id, int $adminId, ?string $note): LeaveRequest
+    {
+        $leave = $this->findOrFail($id);
+        $leave->update([
+            'status'      => 'rejected',
+            'admin_note'  => $note,
+            'actioned_by' => $adminId,
+            'actioned_at' => now(),
+        ]);
+        return $leave->fresh()->load(['employee', 'actionedBy']);
+    }
+}
