@@ -8,6 +8,7 @@ use App\Http\Requests\UpdateDesignationRequest;
 use App\Models\Designation;
 use App\Services\DepartmentService;
 use App\Services\DesignationService;
+use Illuminate\Http\Request;
 
 class DesignationController extends Controller
 {
@@ -63,5 +64,29 @@ class DesignationController extends Controller
     {
         $this->designationService->toggleStatus($designation->id);
         return back()->with('success', 'Designation status updated.');
+    }
+
+    public function quickStore(Request $request)
+    {
+        $data = $request->validate([
+            'name'          => 'required|string|max:255',
+            'department_id' => 'required|exists:departments,id',
+        ]);
+
+        $designation = $this->designationService->create([
+            'name'          => $data['name'],
+            'department_id' => $data['department_id'],
+            'status'        => 'active',
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Designation created.',
+            'designation' => [
+                'id'            => $designation->id,
+                'name'          => $designation->name,
+                'department_id' => $designation->department_id,
+            ],
+        ]);
     }
 }

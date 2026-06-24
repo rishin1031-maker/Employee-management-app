@@ -35,11 +35,13 @@
                     @error('email')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Phone</label>
-                    <input type="text" name="phone" value="{{ old('phone', $employee->phone ?? '') }}"
-                        class="w-full px-4 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Phone <span class="text-red-500">*</span></label>
+                    <input type="tel" name="phone" value="{{ old('phone') }}"
+                           placeholder="e.g. 9876543210"
+                           class="w-full px-4 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500
                                 @error('phone') border-red-400 @else border-gray-300 @enderror">
                     @error('phone')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
+                    <p class="text-xs text-gray-400 mt-1">10–15 digits; spaces and dashes are allowed</p>
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Gender <span class="text-red-500">*</span></label>
@@ -69,32 +71,7 @@
                     </select>
                     @error('status')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
                 </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Department <span class="text-red-500">*</span></label>
-                    <select name="department_id" id="department_id"
-                            class="w-full px-4 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 @error('department_id') border-red-400 @else border-gray-300 @enderror">
-                        <option value="">— Select Department —</option>
-                        @foreach($departments as $dept)
-                            <option value="{{ $dept->id }}" {{ old('department_id') == $dept->id ? 'selected' : '' }}>{{ $dept->name }}</option>
-                        @endforeach
-                    </select>
-                    @error('department_id')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Designation <span class="text-red-500">*</span></label>
-                    <select name="designation_id" id="designation_id"
-                            class="w-full px-4 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 @error('designation_id') border-red-400 @else border-gray-300 @enderror">
-                        <option value="">— Select Designation —</option>
-                        @foreach($designations as $desig)
-                            <option value="{{ $desig->id }}"
-                                data-dept="{{ $desig->department_id }}"
-                                {{ old('designation_id') == $desig->id ? 'selected' : '' }}>
-                                {{ $desig->name }}
-                            </option>
-                        @endforeach
-                    </select>
-                    @error('designation_id')<p class="text-red-500 text-xs mt-1">{{ $message }}</p>@enderror
-                </div>
+                @include('employees.partials.dept-desig-selects')
             </div>
 
             <div class="flex items-center gap-3 pt-2">
@@ -124,40 +101,6 @@ document.getElementById('imageInput').addEventListener('change', function(e) {
     const reader = new FileReader();
     reader.onload = (ev) => document.getElementById('preview').src = ev.target.result;
     reader.readAsDataURL(file);
-});
-
-const deptSelect  = document.getElementById('department_id');
-const desigSelect = document.getElementById('designation_id');
-
-// Filter designations when department changes
-deptSelect.addEventListener('change', function () {
-    const deptId = this.value;
-    Array.from(desigSelect.options).forEach(opt => {
-        if (!opt.dataset.dept) return;
-        opt.hidden = deptId ? opt.dataset.dept !== deptId : false;
-    });
-    // Reset designation if current selection doesn't belong to chosen dept
-    const selected = desigSelect.options[desigSelect.selectedIndex];
-    if (selected && selected.dataset.dept && selected.dataset.dept !== deptId) {
-        desigSelect.value = '';
-    }
-});
-
-// Auto-set department when designation is selected  ← NEW
-desigSelect.addEventListener('change', function () {
-    const selected = this.options[this.selectedIndex];
-    if (!selected || !selected.dataset.dept) return;
-
-    const deptId = selected.dataset.dept;
-
-    // Set the department dropdown
-    deptSelect.value = deptId;
-
-    // Hide designations that don't belong to this department
-    Array.from(desigSelect.options).forEach(opt => {
-        if (!opt.dataset.dept) return;
-        opt.hidden = opt.dataset.dept !== deptId;
-    });
 });
 </script>
 @endsection

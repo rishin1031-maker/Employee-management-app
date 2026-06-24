@@ -43,11 +43,13 @@ Route::middleware('admin.auth')->prefix('admin')->name('admin.')->group(function
     Route::delete('/attendance/break/{break}', [AdminAttendanceController::class, 'deleteBreak'])->name('attendance.break.delete');
 
     // Departments
+    Route::post('departments/quick-store', [DepartmentController::class, 'quickStore'])->name('departments.quick-store');
     Route::resource('departments', DepartmentController::class)->except(['show']);
     Route::post('departments/{department}/toggle-status', [DepartmentController::class, 'toggleStatus'])
         ->name('departments.toggle-status');
 
     // Designations
+    Route::post('designations/quick-store', [DesignationController::class, 'quickStore'])->name('designations.quick-store');
     Route::resource('designations', DesignationController::class)->except(['show']);
     Route::post('designations/{designation}/toggle-status', [DesignationController::class, 'toggleStatus'])
         ->name('designations.toggle-status');
@@ -104,6 +106,7 @@ Route::middleware('employee.auth')->prefix('employee')->name('employee.')->group
 
         Route::post('/attendance/break-out', [EmpAttendanceController::class, 'breakOut'])->name('attendance.breakout');
         Route::post('/attendance/break-in',  [EmpAttendanceController::class, 'breakIn'])->name('attendance.breakin');
+        Route::get('/attendance/live-status', [EmpAttendanceController::class, 'liveStatus'])->name('attendance.live-status');
 
         Route::get('/profile',        [EmpProfileController::class, 'index'])->name('profile');
         Route::post('/profile/phone', [EmpProfileController::class, 'updatePhone'])->name('profile.phone');

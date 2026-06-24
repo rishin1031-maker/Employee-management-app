@@ -40,8 +40,10 @@ class DashboardController extends Controller
         // Attach today's attendance to employee object for blade
         $employee->setRelation('todayAttendance', $today);
 
+        $liveStats = $this->attendanceService->getLiveStats($today);
+
         return view('employee.dashboard.index', compact(
-            'employee', 'leaveStats', 'recentLeaves', 'recentAttendance'
+            'employee', 'leaveStats', 'recentLeaves', 'recentAttendance', 'liveStats'
         ));
     }
 }

@@ -58,4 +58,27 @@ class DepartmentController extends Controller
         $this->departmentService->toggleStatus($department->id);
         return back()->with('success', "Department status updated.");
     }
+
+    public function quickStore(Request $request)
+    {
+        $data = $request->validate([
+            'name'        => 'required|string|max:255|unique:departments,name',
+            'description' => 'nullable|string|max:1000',
+        ]);
+
+        $department = $this->departmentService->create([
+            'name'        => $data['name'],
+            'description' => $data['description'] ?? null,
+            'status'      => 'active',
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Department created.',
+            'department' => [
+                'id'   => $department->id,
+                'name' => $department->name,
+            ],
+        ]);
+    }
 }

@@ -11,8 +11,8 @@ return new class extends Migration {
             $table->id();
             $table->foreignId('attendance_id')->constrained()->onDelete('cascade');
             $table->foreignId('employee_id')->constrained()->onDelete('cascade');
-            $table->timestamp('break_out');
-            $table->timestamp('break_in')->nullable();
+            $table->dateTime('break_out');           // break start (never auto-update)
+            $table->dateTime('break_in')->nullable(); // break end
             $table->enum('marked_by', ['self', 'admin'])->default('self');
             $table->timestamps();
         });

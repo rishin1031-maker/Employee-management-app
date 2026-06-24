@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\AttendanceTimeCalculator;
 use Illuminate\Database\Eloquent\Model;
 
 class Attendance extends Model
@@ -22,53 +23,72 @@ class Attendance extends Model
         return $this->belongsTo(Employee::class);
     }
 
-    // Add relationship
     public function breaks()
     {
         return $this->hasMany(AttendanceBreak::class);
     }
 
-    // Total break minutes
     public function getTotalBreakMinutesAttribute(): int
     {
-        return $this->breaks
-            ->filter(fn($b) => $b->break_in !== null)
-            ->sum(fn($b) => $b->break_out->diffInMinutes($b->break_in));
+        $breaks = $this->relationLoaded('breaks')
+            ? $this->breaks
+            : $this->breaks()->get();
+
+        return AttendanceTimeCalculator::totalBreakMinutes($breaks);
     }
 
-    // Is employee currently on break?
     public function getOnBreakAttribute(): bool
     {
-        return $this->breaks()
-            ->whereNull('break_in')
-            ->exists();
+        if ($this->relationLoaded('breaks')) {
+            return $this->breaks->contains(fn ($b) => $b->break_in === null);
+        }
+
+        return $this->breaks()->whereNull('break_in')->exists();
     }
 
-    // Active (ongoing) break
     public function activeBreak()
     {
         return $this->hasOne(AttendanceBreak::class)
                     ->whereNull('break_in')
-                    ->latest();
+                    ->latest('break_out');
     }
 
-    // Net hours worked (total - breaks)
-    public function getNetHoursWorkedAttribute(): ?string
-    {
-        if (!$this->check_in || !$this->check_out) return null;
-
-        $totalMins = $this->check_in->diffInMinutes($this->check_out);
-        $breakMins = $this->total_break_minutes;
-        $netMins   = max(0, $totalMins - $breakMins);
-
-        return floor($netMins / 60) . 'h ' . ($netMins % 60) . 'm';
-    }
-
-    // Keep old hours_worked as gross (without break deduction)
     public function getHoursWorkedAttribute(): ?string
     {
-        if (!$this->check_in || !$this->check_out) return null;
-        $mins = $this->check_in->diffInMinutes($this->check_out);
+        if (!$this->check_in || !$this->check_out) {
+            return null;
+        }
+
+        $mins = (int) $this->check_in->diffInMinutes($this->check_out);
+
         return floor($mins / 60) . 'h ' . ($mins % 60) . 'm';
-    }    
+    }
+
+    public function getNetHoursWorkedAttribute(): ?string
+    {
+        $netMins = $this->net_minutes;
+
+        return $netMins > 0 || ($this->check_in && $this->check_out)
+            ? floor($netMins / 60) . 'h ' . ($netMins % 60) . 'm'
+            : null;
+    }
+
+    public function getNetMinutesAttribute(): int
+    {
+        if (!$this->check_in || !$this->check_out) {
+            return 0;
+        }
+
+        return (int) floor(AttendanceTimeCalculator::netSecondsForCompletedDay($this) / 60);
+    }
+
+    public function getIsEightHoursCompleteAttribute(): bool
+    {
+        return $this->net_minutes >= 480;
+    }
+
+    public function getRemainingMinutesAttribute(): int
+    {
+        return max(0, 480 - $this->net_minutes);
+    }
 }

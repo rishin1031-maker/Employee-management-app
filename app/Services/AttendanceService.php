@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Contracts\Repositories\AttendanceRepositoryInterface;
 use App\Models\Attendance;
 use App\Models\AttendanceBreak;
+use App\Services\AttendanceTimeCalculator;
 
 class AttendanceService
 {
@@ -23,45 +24,70 @@ class AttendanceService
         return $this->attendanceRepo->checkIn($employeeId);
     }
 
-    public function checkOut(int $employeeId): Attendance
+    public function checkOut(int $employeeId, ?string $earlyReason = null): \App\Models\Attendance
     {
-        $attendance = $this->attendanceRepo->getTodayForEmployee($employeeId);
+        return \Illuminate\Support\Facades\DB::transaction(function () use ($employeeId, $earlyReason) {
+            $attendance = $this->attendanceRepo->getTodayForEmployee($employeeId);
 
-        if (!$attendance) {
-            throw new \Exception('No check-in record found for today.');
-        }
+            if (!$attendance) {
+                throw new \Exception('No check-in record found for today.');
+            }
 
-        if ($attendance->check_out) {
-            throw new \Exception('You have already checked out today.');
-        }
+            if ($attendance->check_out) {
+                throw new \Exception('You have already checked out.');
+            }
 
-        return $this->attendanceRepo->checkOut($employeeId);
+            if ($attendance->on_break) {
+                $this->attendanceRepo->endBreak($attendance->id);
+            }
+
+            $data = ['check_out' => now()];
+            if ($earlyReason) {
+                $data['note'] = 'Early checkout: ' . $earlyReason;
+            }
+
+            return $this->attendanceRepo->checkOutWithData($employeeId, $data);
+        });
     }
 
-    public function startBreak(int $employeeId): AttendanceBreak
+    // startBreak → repository startBreak → writes now() to break_OUT
+    public function startBreak(int $employeeId): \App\Models\AttendanceBreak
     {
-        $attendance = $this->attendanceRepo->getTodayForEmployee($employeeId);
+        return \Illuminate\Support\Facades\DB::transaction(function () use ($employeeId) {
+            $attendance = $this->attendanceRepo->getTodayForEmployee($employeeId);
 
-        if (!$attendance) {
-            throw new \Exception('You must check in before taking a break.');
-        }
+            if (!$attendance) {
+                throw new \Exception('You must check in before taking a break.');
+            }
+            if ($attendance->check_out) {
+                throw new \Exception('You have already checked out.');
+            }
 
-        if ($attendance->on_break) {
-            throw new \Exception('You are already on a break.');
-        }
+            $attendance->load('breaks');
+            if ($attendance->on_break) {
+                throw new \Exception('You are already on a break.');
+            }
 
-        return $this->attendanceRepo->startBreak($attendance->id, $employeeId, 'self');
+            return $this->attendanceRepo->startBreak($attendance->id, $employeeId, 'self');
+        });
     }
 
-    public function endBreak(int $employeeId): AttendanceBreak
+    // endBreak → repository endBreak → writes now() to break_IN
+    public function endBreak(int $employeeId): \App\Models\AttendanceBreak
     {
-        $attendance = $this->attendanceRepo->getTodayForEmployee($employeeId);
+        return \Illuminate\Support\Facades\DB::transaction(function () use ($employeeId) {
+            $attendance = $this->attendanceRepo->getTodayForEmployee($employeeId);
 
-        if (!$attendance) {
-            throw new \Exception('No attendance record found for today.');
-        }
+            if (!$attendance) {
+                throw new \Exception('No attendance record found for today.');
+            }
 
-        return $this->attendanceRepo->endBreak($attendance->id);
+            if (!$attendance->on_break) {
+                throw new \Exception('You are not currently on a break.');
+            }
+
+            return $this->attendanceRepo->endBreak($attendance->id);
+        });
     }
 
     public function markAttendanceByAdmin(int $employeeId, string $date, array $data): Attendance
@@ -132,5 +158,16 @@ class AttendanceService
     public function getTodayForEmployee(int $employeeId): ?\App\Models\Attendance
     {
         return $this->attendanceRepo->getTodayForEmployee($employeeId);
+    }
+
+    public function getLiveStats(?Attendance $attendance): array
+    {
+        if (!$attendance) {
+            return AttendanceTimeCalculator::forAttendance(new Attendance());
+        }
+
+        $attendance->loadMissing('breaks');
+
+        return AttendanceTimeCalculator::forAttendance($attendance);
     }
 }

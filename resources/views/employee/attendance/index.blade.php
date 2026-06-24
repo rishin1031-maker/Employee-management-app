@@ -78,15 +78,20 @@
                         @endif
                     </td>
                     <td class="px-6 py-3">
-                        @if($att->net_hours_worked)
-                            <p class="font-medium text-green-700">{{ $att->net_hours_worked }}</p>
-                            @if($att->hours_worked !== $att->net_hours_worked)
-                                <p class="text-xs text-gray-400">Gross: {{ $att->hours_worked }}</p>
-                            @endif
-                        @else
-                            —
+                    @if($att->net_hours_worked)
+                        <p class="font-medium text-green-700">{{ $att->net_hours_worked }}</p>
+                        @if($att->hours_worked !== $att->net_hours_worked)
+                            <p class="text-xs text-gray-400">Gross: {{ $att->hours_worked }}</p>
                         @endif
-                    </td>
+                        @if($att->is_eight_hours_complete)
+                            <span class="text-xs text-green-500"><i class="fas fa-check"></i> Full day</span>
+                        @else
+                            <span class="text-xs text-red-400">Short {{ $att->remaining_minutes }}m</span>
+                        @endif
+                    @else
+                        <span class="text-gray-400">—</span>
+                    @endif
+                </td>
                     <td class="px-6 py-3 text-center">
                         <span class="px-2.5 py-1 rounded-full text-xs font-medium
                             {{ $att->status === 'present' ? 'bg-green-100 text-green-700' : ($att->status === 'absent' ? 'bg-red-100 text-red-700' : 'bg-yellow-100 text-yellow-700') }}">

@@ -53,14 +53,17 @@ class AttendanceRepository extends BaseRepository implements AttendanceRepositor
                 ->whereMonth('date', $month)
                 ->get();
 
-            $report[] = [
-                'employee'   => $emp,
-                'present'    => $records->where('status', 'present')->count(),
-                'absent'     => $records->where('status', 'absent')->count(),
-                'half_day'   => $records->where('status', 'half_day')->count(),
-                'on_leave'   => $records->where('status', 'on_leave')->count(),
-                'not_marked' => $workingDays - $records->count(),
-            ];
+                $report[] = [
+                    'employee'        => $emp,
+                    'present'         => $records->where('status', 'present')->count(),
+                    'absent'          => $records->where('status', 'absent')->count(),
+                    'half_day'        => $records->where('status', 'half_day')->count(),
+                    'on_leave'        => $records->where('status', 'on_leave')->count(),
+                    'not_marked'      => $workingDays - $records->count(),
+                    'early_checkouts' => $records->filter(fn($r) =>        // ← ADD THIS
+                        $r->note && str_starts_with($r->note, 'Early checkout:')
+                    )->count(),
+                ];
         }
 
         return $report;
@@ -96,21 +99,46 @@ class AttendanceRepository extends BaseRepository implements AttendanceRepositor
 
     public function startBreak(int $attendanceId, int $employeeId, string $markedBy): AttendanceBreak
     {
+        // Serialize break actions per attendance to prevent duplicate zero-duration breaks
+        Attendance::where('id', $attendanceId)->lockForUpdate()->firstOrFail();
+
+        if (AttendanceBreak::where('attendance_id', $attendanceId)->whereNull('break_in')->exists()) {
+            throw new \Exception('You are already on a break.');
+        }
+
         return AttendanceBreak::create([
             'attendance_id' => $attendanceId,
             'employee_id'   => $employeeId,
-            'break_out'     => now(),
+            'break_out'     => now(),   // break start
+            'break_in'      => null,    // break end (null = still on break)
             'marked_by'     => $markedBy,
         ]);
     }
 
+    public function checkOutWithData(int $employeeId, array $data): Attendance
+    {
+        $attendance = Attendance::where('employee_id', $employeeId)
+                                ->where('date', today()->toDateString())
+                                ->firstOrFail();
+        $attendance->update($data);
+        return $attendance->fresh()->load('breaks');
+    }
+
+// endBreak → finds open break (break_in IS NULL) → sets break_in = now()
     public function endBreak(int $attendanceId): AttendanceBreak
     {
+        Attendance::where('id', $attendanceId)->lockForUpdate()->firstOrFail();
+
         $break = AttendanceBreak::where('attendance_id', $attendanceId)
-                                ->whereNull('break_in')
-                                ->latest()
-                                ->firstOrFail();
-        $break->update(['break_in' => now()]);
+            ->whereNull('break_in')
+            ->orderByDesc('break_out')
+            ->first();
+
+        if (!$break) {
+            throw new \Exception('No active break found to end.');
+        }
+
+        $break->update(['break_in' => now()]);  // ← set END time
         return $break->fresh();
     }
 

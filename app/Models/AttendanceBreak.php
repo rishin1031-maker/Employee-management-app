@@ -29,16 +29,25 @@ class AttendanceBreak extends Model
     // Duration of this break in minutes
     public function getDurationMinutesAttribute(): ?int
     {
-        if (!$this->break_in) return null;
-        return (int) $this->break_out->diffInMinutes($this->break_in);
+        if (!$this->break_in || !$this->break_out) return null;
+    
+        $out = \Carbon\Carbon::parse($this->break_out);
+        $in  = \Carbon\Carbon::parse($this->break_in);
+    
+        // break_in must be after break_out
+        if ($in->lte($out)) return 0;
+    
+        return (int) $out->diffInMinutes($in);
     }
+    
 
     // Human readable duration e.g. "45m" or "1h 10m"
     public function getDurationLabelAttribute(): string
     {
         $mins = $this->duration_minutes;
         if ($mins === null) return 'Ongoing';
-        if ($mins < 60) return $mins . 'm';
+        if ($mins === 0)    return '< 1m';
+        if ($mins < 60)     return $mins . 'm';
         return floor($mins / 60) . 'h ' . ($mins % 60) . 'm';
     }
 }
