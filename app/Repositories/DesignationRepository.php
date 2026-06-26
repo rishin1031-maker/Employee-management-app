@@ -14,12 +14,27 @@ class DesignationRepository extends BaseRepository implements DesignationReposit
         parent::__construct($model);
     }
 
-    public function paginateWithCounts(int $perPage = 10): LengthAwarePaginator
+    public function paginateWithCounts(array $filters = [], int $perPage = 10): LengthAwarePaginator
     {
-        return Designation::with('department')
-                          ->withCount('employees')
-                          ->latest()
-                          ->paginate($perPage);
+        $query = Designation::with('department')->withCount('employees');
+
+        if (!empty($filters['search'])) {
+            $search = $filters['search'];
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', '%' . $search . '%')
+                  ->orWhereHas('department', fn ($d) => $d->where('name', 'like', '%' . $search . '%'));
+            });
+        }
+
+        if (!empty($filters['department_id'])) {
+            $query->where('department_id', $filters['department_id']);
+        }
+
+        if (!empty($filters['status'])) {
+            $query->where('status', $filters['status']);
+        }
+
+        return $query->latest()->paginate($perPage)->withQueryString();
     }
 
     public function getActive(): Collection
@@ -49,5 +64,15 @@ class DesignationRepository extends BaseRepository implements DesignationReposit
     public function hasEmployees(int $id): bool
     {
         return Designation::findOrFail($id)->employees()->exists();
+    }
+
+    public function findWithDepartment(int $id): Designation
+    {
+        return Designation::with('department')->findOrFail($id);
+    }
+
+    public function findWithDepartmentAndEmployeeCount(int $id): Designation
+    {
+        return Designation::with('department')->withCount('employees')->findOrFail($id);
     }
 }

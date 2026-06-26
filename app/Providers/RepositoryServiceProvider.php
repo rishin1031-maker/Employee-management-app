@@ -13,6 +13,7 @@ use App\Contracts\Repositories\AttendanceRepositoryInterface;
 use App\Contracts\Repositories\SalaryRepositoryInterface;
 use App\Contracts\Repositories\PayrollRepositoryInterface;
 use App\Contracts\Repositories\NotificationRepositoryInterface;
+use App\Contracts\Repositories\AdminRepositoryInterface;
 
 // Implementations
 use App\Repositories\EmployeeRepository;
@@ -23,6 +24,7 @@ use App\Repositories\AttendanceRepository;
 use App\Repositories\SalaryRepository;
 use App\Repositories\PayrollRepository;
 use App\Repositories\NotificationRepository;
+use App\Repositories\AdminRepository;
 
 class RepositoryServiceProvider extends ServiceProvider
 {
@@ -36,5 +38,6 @@ class RepositoryServiceProvider extends ServiceProvider
         $this->app->bind(SalaryRepositoryInterface::class,      SalaryRepository::class);
         $this->app->bind(PayrollRepositoryInterface::class,     PayrollRepository::class);
         $this->app->bind(NotificationRepositoryInterface::class,NotificationRepository::class);
+        $this->app->bind(AdminRepositoryInterface::class,         AdminRepository::class);
     }
 }

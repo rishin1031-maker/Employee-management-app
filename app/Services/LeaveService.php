@@ -10,7 +10,6 @@ use App\Models\LeaveRequest;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Pagination\LengthAwarePaginator;
-use Illuminate\Support\Facades\Auth;
 
 class LeaveService
 {
@@ -72,6 +71,12 @@ class LeaveService
 
     public function approveLeave(int $id, int $adminId, ?string $note): LeaveRequest
     {
+        $leave = $this->leaveRepo->findOrFail($id);
+
+        if ($leave->status !== 'pending') {
+            throw new \Exception('This request has already been actioned.');
+        }
+
         $leave = $this->leaveRepo->approve($id, $adminId, $note);
 
         // Deduct balance
@@ -90,6 +95,12 @@ class LeaveService
 
     public function rejectLeave(int $id, int $adminId, ?string $note): LeaveRequest
     {
+        $leave = $this->leaveRepo->findOrFail($id);
+
+        if ($leave->status !== 'pending') {
+            throw new \Exception('This request has already been actioned.');
+        }
+
         $leave = $this->leaveRepo->reject($id, $adminId, $note);
 
         // Notify employee
@@ -147,5 +158,15 @@ class LeaveService
     public function getRecentPending(int $limit = 5): Collection
     {
         return $this->leaveRepo->getRecentPending($limit);
+    }
+
+    public function getLeaveForAdminShow(int $id): LeaveRequest
+    {
+        return $this->leaveRepo->findWithAdminDetails($id);
+    }
+
+    public function employeeOwnsLeave(int $leaveId, int $employeeId): bool
+    {
+        return $this->leaveRepo->belongsToEmployee($leaveId, $employeeId);
     }
 }

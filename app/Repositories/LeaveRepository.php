@@ -106,4 +106,41 @@ class LeaveRepository extends BaseRepository implements LeaveRepositoryInterface
         ]);
         return $leave->fresh()->load(['employee', 'actionedBy']);
     }
+
+    public function findWithAdminDetails(int $id): LeaveRequest
+    {
+        return LeaveRequest::with(['employee.department', 'employee.designation', 'actionedBy'])
+                           ->findOrFail($id);
+    }
+
+    public function countByEmployeeAndStatus(int $employeeId, string $status): int
+    {
+        return LeaveRequest::where('employee_id', $employeeId)
+                           ->where('status', $status)
+                           ->count();
+    }
+
+    public function getRecentForEmployee(int $employeeId, int $limit = 5): Collection
+    {
+        return LeaveRequest::where('employee_id', $employeeId)
+                           ->latest()
+                           ->take($limit)
+                           ->get();
+    }
+
+    public function belongsToEmployee(int $leaveId, int $employeeId): bool
+    {
+        return LeaveRequest::where('id', $leaveId)
+                           ->where('employee_id', $employeeId)
+                           ->exists();
+    }
+
+    public function getStatsForEmployee(int $employeeId): array
+    {
+        return [
+            'pending'  => $this->countByEmployeeAndStatus($employeeId, 'pending'),
+            'approved' => $this->countByEmployeeAndStatus($employeeId, 'approved'),
+            'rejected' => $this->countByEmployeeAndStatus($employeeId, 'rejected'),
+        ];
+    }
 }

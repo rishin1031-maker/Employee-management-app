@@ -12,9 +12,9 @@ class DesignationService
         private DesignationRepositoryInterface $designationRepo
     ) {}
 
-    public function getPaginated(int $perPage = 10): LengthAwarePaginator
+    public function getPaginated(array $filters = [], int $perPage = 10): LengthAwarePaginator
     {
-        return $this->designationRepo->paginateWithCounts($perPage);
+        return $this->designationRepo->paginateWithCounts($filters, $perPage);
     }
 
     public function getActive(): Collection
@@ -48,5 +48,15 @@ class DesignationService
     public function toggleStatus(int $id): bool
     {
         return $this->designationRepo->toggleStatus($id);
+    }
+
+    public function getWithDepartment(int $id): \App\Models\Designation
+    {
+        return $this->designationRepo->findWithDepartment($id);
+    }
+
+    public function getWithDetails(int $id): \App\Models\Designation
+    {
+        return $this->designationRepo->findWithDepartmentAndEmployeeCount($id);
     }
 }

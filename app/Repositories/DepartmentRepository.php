@@ -14,11 +14,23 @@ class DepartmentRepository extends BaseRepository implements DepartmentRepositor
         parent::__construct($model);
     }
 
-    public function paginateWithCounts(int $perPage = 10): LengthAwarePaginator
+    public function paginateWithCounts(array $filters = [], int $perPage = 10): LengthAwarePaginator
     {
-        return Department::withCount(['designations', 'employees'])
-                         ->latest()
-                         ->paginate($perPage);
+        $query = Department::withCount(['designations', 'employees']);
+
+        if (!empty($filters['search'])) {
+            $search = $filters['search'];
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', '%' . $search . '%')
+                  ->orWhere('description', 'like', '%' . $search . '%');
+            });
+        }
+
+        if (!empty($filters['status'])) {
+            $query->where('status', $filters['status']);
+        }
+
+        return $query->latest()->paginate($perPage)->withQueryString();
     }
 
     public function getActive(): Collection

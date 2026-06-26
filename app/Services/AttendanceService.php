@@ -6,6 +6,7 @@ use App\Contracts\Repositories\AttendanceRepositoryInterface;
 use App\Models\Attendance;
 use App\Models\AttendanceBreak;
 use App\Services\AttendanceTimeCalculator;
+use Illuminate\Support\Facades\DB;
 
 class AttendanceService
 {
@@ -24,9 +25,9 @@ class AttendanceService
         return $this->attendanceRepo->checkIn($employeeId);
     }
 
-    public function checkOut(int $employeeId, ?string $earlyReason = null): \App\Models\Attendance
+    public function checkOut(int $employeeId, ?string $earlyReason = null): Attendance
     {
-        return \Illuminate\Support\Facades\DB::transaction(function () use ($employeeId, $earlyReason) {
+        return DB::transaction(function () use ($employeeId, $earlyReason) {
             $attendance = $this->attendanceRepo->getTodayForEmployee($employeeId);
 
             if (!$attendance) {
@@ -50,10 +51,9 @@ class AttendanceService
         });
     }
 
-    // startBreak → repository startBreak → writes now() to break_OUT
-    public function startBreak(int $employeeId): \App\Models\AttendanceBreak
+    public function startBreak(int $employeeId): AttendanceBreak
     {
-        return \Illuminate\Support\Facades\DB::transaction(function () use ($employeeId) {
+        return DB::transaction(function () use ($employeeId) {
             $attendance = $this->attendanceRepo->getTodayForEmployee($employeeId);
 
             if (!$attendance) {
@@ -72,10 +72,9 @@ class AttendanceService
         });
     }
 
-    // endBreak → repository endBreak → writes now() to break_IN
-    public function endBreak(int $employeeId): \App\Models\AttendanceBreak
+    public function endBreak(int $employeeId): AttendanceBreak
     {
-        return \Illuminate\Support\Facades\DB::transaction(function () use ($employeeId) {
+        return DB::transaction(function () use ($employeeId) {
             $attendance = $this->attendanceRepo->getTodayForEmployee($employeeId);
 
             if (!$attendance) {
@@ -104,13 +103,15 @@ class AttendanceService
         ]);
     }
 
-    public function addBreakByAdmin(int $attendanceId, int $employeeId, string $date, string $breakOut, ?string $breakIn): AttendanceBreak
+    public function addBreakByAdmin(int $attendanceId, string $breakOut, ?string $breakIn): AttendanceBreak
     {
+        $attendance = $this->attendanceRepo->findAttendanceOrFail($attendanceId);
+
         return $this->attendanceRepo->addBreak(
-            $attendanceId,
-            $employeeId,
-            $date . ' ' . $breakOut . ':00',
-            $breakIn ? $date . ' ' . $breakIn . ':00' : null
+            $attendance->id,
+            $attendance->employee_id,
+            $attendance->date->toDateString() . ' ' . $breakOut . ':00',
+            $breakIn ? $attendance->date->toDateString() . ' ' . $breakIn . ':00' : null
         );
     }
 
@@ -151,11 +152,11 @@ class AttendanceService
         return [
             'present'    => $this->attendanceRepo->getTodayPresentCount(),
             'absent'     => $this->attendanceRepo->getTodayAbsentCount(),
-            'not_marked' => $activeCount - \App\Models\Attendance::where('date', today())->count(),
+            'not_marked' => $activeCount - $this->attendanceRepo->getTodayMarkedCount(),
         ];
     }
 
-    public function getTodayForEmployee(int $employeeId): ?\App\Models\Attendance
+    public function getTodayForEmployee(int $employeeId): ?Attendance
     {
         return $this->attendanceRepo->getTodayForEmployee($employeeId);
     }
@@ -169,5 +170,41 @@ class AttendanceService
         $attendance->loadMissing('breaks');
 
         return AttendanceTimeCalculator::forAttendance($attendance);
+    }
+
+    public function buildLivePayload(?Attendance $attendance, array $stats): array
+    {
+        return [
+            'on_break'                => $stats['on_break'],
+            'net_seconds'             => $stats['net_seconds'],
+            'total_break_seconds'     => $stats['total_break_seconds'],
+            'completed_break_seconds' => $stats['completed_break_seconds'],
+            'active_break_seconds'    => $stats['active_break_seconds'],
+            'remaining_seconds'       => $stats['remaining_seconds'],
+            'progress_percent'        => $stats['progress_percent'],
+            'is_complete'             => $stats['is_complete'],
+            'break_count'             => $stats['break_count'],
+            'active_break_since'      => $stats['active_break_since'],
+            'target_seconds'          => AttendanceTimeCalculator::TARGET_SECONDS,
+        ];
+    }
+
+    public function getEmployeeLiveStatus(int $employeeId): array
+    {
+        $attendance = $this->attendanceRepo->getTodayForEmployee($employeeId);
+
+        if (!$attendance) {
+            return ['checked_in' => false];
+        }
+
+        $stats = $this->getLiveStats($attendance);
+
+        return [
+            'checked_in'    => true,
+            'checked_out'   => $attendance->check_out !== null,
+            'check_in_time' => $attendance->check_in->format('h:i A'),
+            'server_time'   => now()->timestamp,
+            ...$this->buildLivePayload($attendance, $stats),
+        ];
     }
 }

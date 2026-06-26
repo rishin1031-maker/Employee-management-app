@@ -167,4 +167,23 @@ class AttendanceRepository extends BaseRepository implements AttendanceRepositor
     {
         return Attendance::where('date', today())->where('status', 'absent')->count();
     }
+
+    public function getTodayMarkedCount(): int
+    {
+        return Attendance::where('date', today())->count();
+    }
+
+    public function findAttendanceOrFail(int $id): Attendance
+    {
+        return Attendance::findOrFail($id);
+    }
+
+    public function getRecentForEmployee(int $employeeId, int $limit = 7): Collection
+    {
+        return Attendance::where('employee_id', $employeeId)
+                         ->with('breaks')
+                         ->orderByDesc('date')
+                         ->take($limit)
+                         ->get();
+    }
 }

@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Employee;
 
 use App\Http\Controllers\Controller;
 use App\Services\AttendanceService;
-use App\Services\AttendanceTimeCalculator;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -40,8 +39,8 @@ class AttendanceController extends Controller
     public function checkOut(Request $request)
     {
         try {
-            $employee   = Auth::guard('employee')->user();
-            $attendance = $this->attendanceService->getTodayForEmployee($employee->id);
+            $employeeId  = Auth::guard('employee')->id();
+            $attendance  = $this->attendanceService->getTodayForEmployee($employeeId);
 
             if (!$attendance) {
                 return back()->with('error', 'No check-in record found for today.');
@@ -64,7 +63,7 @@ class AttendanceController extends Controller
             }
 
             $att = $this->attendanceService->checkOut(
-                $employee->id,
+                $employeeId,
                 $isComplete ? null : $request->early_reason
             );
 
@@ -74,7 +73,6 @@ class AttendanceController extends Controller
             }
 
             return back()->with('success', $msg);
-
         } catch (\Exception $e) {
             return back()->with('error', $e->getMessage());
         }
@@ -83,16 +81,17 @@ class AttendanceController extends Controller
     public function breakOut(Request $request)
     {
         try {
-            $break = $this->attendanceService->startBreak(Auth::guard('employee')->id());
-            $attendance = $this->attendanceService->getTodayForEmployee(Auth::guard('employee')->id());
-            $stats = $this->attendanceService->getLiveStats($attendance);
+            $employeeId = Auth::guard('employee')->id();
+            $break      = $this->attendanceService->startBreak($employeeId);
+            $attendance = $this->attendanceService->getTodayForEmployee($employeeId);
+            $stats      = $this->attendanceService->getLiveStats($attendance);
 
             if ($request->expectsJson()) {
                 return response()->json([
                     'success'     => true,
                     'message'     => 'Break started at ' . $break->break_out->format('h:i A'),
                     'server_time' => now()->timestamp,
-                    ...$this->livePayload($attendance, $stats),
+                    ...$this->attendanceService->buildLivePayload($attendance, $stats),
                 ]);
             }
 
@@ -108,16 +107,17 @@ class AttendanceController extends Controller
     public function breakIn(Request $request)
     {
         try {
-            $break = $this->attendanceService->endBreak(Auth::guard('employee')->id());
-            $attendance = $this->attendanceService->getTodayForEmployee(Auth::guard('employee')->id());
-            $stats = $this->attendanceService->getLiveStats($attendance);
+            $employeeId = Auth::guard('employee')->id();
+            $break      = $this->attendanceService->endBreak($employeeId);
+            $attendance = $this->attendanceService->getTodayForEmployee($employeeId);
+            $stats      = $this->attendanceService->getLiveStats($attendance);
 
             if ($request->expectsJson()) {
                 return response()->json([
                     'success'     => true,
                     'message'     => 'Break ended. Duration: ' . $break->duration_label,
                     'server_time' => now()->timestamp,
-                    ...$this->livePayload($attendance, $stats),
+                    ...$this->attendanceService->buildLivePayload($attendance, $stats),
                 ]);
             }
 
@@ -132,38 +132,8 @@ class AttendanceController extends Controller
 
     public function liveStatus()
     {
-        $employee   = Auth::guard('employee')->user();
-        $attendance = $this->attendanceService->getTodayForEmployee($employee->id);
-
-        if (!$attendance) {
-            return response()->json(['checked_in' => false]);
-        }
-
-        $stats = $this->attendanceService->getLiveStats($attendance);
-
-        return response()->json([
-            'checked_in'  => true,
-            'checked_out' => $attendance->check_out !== null,
-            'check_in_time' => $attendance->check_in->format('h:i A'),
-            'server_time' => now()->timestamp,
-            ...$this->livePayload($attendance, $stats),
-        ]);
-    }
-
-    private function livePayload(?\App\Models\Attendance $attendance, array $stats): array
-    {
-        return [
-            'on_break'                => $stats['on_break'],
-            'net_seconds'             => $stats['net_seconds'],
-            'total_break_seconds'     => $stats['total_break_seconds'],
-            'completed_break_seconds' => $stats['completed_break_seconds'],
-            'active_break_seconds'    => $stats['active_break_seconds'],
-            'remaining_seconds'       => $stats['remaining_seconds'],
-            'progress_percent'        => $stats['progress_percent'],
-            'is_complete'             => $stats['is_complete'],
-            'break_count'             => $stats['break_count'],
-            'active_break_since'      => $stats['active_break_since'],
-            'target_seconds'          => AttendanceTimeCalculator::TARGET_SECONDS,
-        ];
+        return response()->json(
+            $this->attendanceService->getEmployeeLiveStatus(Auth::guard('employee')->id())
+        );
     }
 }

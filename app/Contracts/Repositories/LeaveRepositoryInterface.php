@@ -18,4 +18,9 @@ interface LeaveRepositoryInterface extends BaseRepositoryInterface
     public function hasOverlap(int $employeeId, string $fromDate, string $toDate): bool;
     public function approve(int $id, int $adminId, ?string $note): LeaveRequest;
     public function reject(int $id, int $adminId, ?string $note): LeaveRequest;
+    public function findWithAdminDetails(int $id): LeaveRequest;
+    public function countByEmployeeAndStatus(int $employeeId, string $status): int;
+    public function getRecentForEmployee(int $employeeId, int $limit = 5): Collection;
+    public function belongsToEmployee(int $leaveId, int $employeeId): bool;
+    public function getStatsForEmployee(int $employeeId): array;
 }

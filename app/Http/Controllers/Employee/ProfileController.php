@@ -13,8 +13,9 @@ class ProfileController extends Controller
 
     public function index()
     {
-        $employee = Auth::guard('employee')->user()
-            ->load(['department', 'designation', 'salary', 'salaryHistories', 'leaveBalance']);
+        $employee = $this->employeeService->getEmployeeForProfile(
+            Auth::guard('employee')->id()
+        );
 
         return view('employee.profile.index', compact('employee'));
     }

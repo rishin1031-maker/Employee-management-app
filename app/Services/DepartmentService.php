@@ -12,9 +12,9 @@ class DepartmentService
         private DepartmentRepositoryInterface $departmentRepo
     ) {}
 
-    public function getPaginated(int $perPage = 10): LengthAwarePaginator
+    public function getPaginated(array $filters = [], int $perPage = 10): LengthAwarePaginator
     {
-        return $this->departmentRepo->paginateWithCounts($perPage);
+        return $this->departmentRepo->paginateWithCounts($filters, $perPage);
     }
 
     public function getActive(): Collection

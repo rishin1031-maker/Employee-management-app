@@ -55,12 +55,8 @@ class AttendanceController extends Controller
             'break_in'      => 'nullable|date_format:H:i|after:break_out',
         ]);
 
-        $attendance = \App\Models\Attendance::findOrFail($request->attendance_id);
-
         $this->attendanceService->addBreakByAdmin(
-            $attendance->id,
-            $attendance->employee_id,
-            $attendance->date->toDateString(),
+            $request->attendance_id,
             $request->break_out,
             $request->break_in
         );

@@ -3,12 +3,14 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\Employee;
+use App\Services\AuthService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class AuthController extends Controller
 {
+    public function __construct(private AuthService $authService) {}
+
     public function showLogin()
     {
         if (Auth::guard('admin')->check()) {
@@ -27,28 +29,22 @@ class AuthController extends Controller
             'password' => 'required',
         ]);
 
-        $login    = $request->input('login');
-        $password = $request->input('password');
-        $remember = $request->boolean('remember');
+        $guard = $this->authService->resolveWebLoginGuard(
+            $request->input('login'),
+            $request->input('password'),
+            $request->boolean('remember')
+        );
 
-        // Try admin login (by email)
-        if (filter_var($login, FILTER_VALIDATE_EMAIL)) {
-            if (Auth::guard('admin')->attempt(['email' => $login, 'password' => $password], $remember)) {
-                $request->session()->regenerate();
-                return redirect()->route('admin.dashboard')->with('success', 'Welcome back!');
-            }
+        if ($guard === 'admin') {
+            $request->session()->regenerate();
+
+            return redirect()->route('admin.dashboard')->with('success', 'Welcome back!');
         }
 
-        // Try employee login (by employee_id like EMP001)
-        if (preg_match('/^EMP\d+$/i', strtoupper($login))) {
-            $employee = Employee::where('employee_id', strtoupper($login))->first();
-            if ($employee && Auth::guard('employee')->attempt(
-                ['employee_id' => strtoupper($login), 'password' => $password], $remember
-            )) {
-                $request->session()->regenerate();
-                $employee->update(['last_login_at' => now()]);
-                return redirect()->route('employee.dashboard');
-            }
+        if ($guard === 'employee') {
+            $request->session()->regenerate();
+
+            return redirect()->route('employee.dashboard');
         }
 
         return back()

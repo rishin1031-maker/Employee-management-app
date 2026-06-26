@@ -25,7 +25,7 @@ class LeaveController extends Controller
 
     public function show(LeaveRequest $leave)
     {
-        $leave->load(['employee.department', 'employee.designation', 'actionedBy']);
+        $leave = $this->leaveService->getLeaveForAdminShow($leave->id);
         return view('admin.leave.show', compact('leave'));
     }
 
@@ -33,11 +33,12 @@ class LeaveController extends Controller
     {
         $request->validate(['admin_note' => 'nullable|string|max:500']);
 
-        if ($leave->status !== 'pending') {
-            return back()->with('error', 'This request has already been actioned.');
+        try {
+            $this->leaveService->approveLeave($leave->id, Auth::guard('admin')->id(), $request->admin_note);
+        } catch (\Exception $e) {
+            return back()->with('error', $e->getMessage());
         }
 
-        $this->leaveService->approveLeave($leave->id, Auth::guard('admin')->id(), $request->admin_note);
         return redirect()->route('admin.leave.index')->with('success', 'Leave approved successfully.');
     }
 
@@ -45,11 +46,12 @@ class LeaveController extends Controller
     {
         $request->validate(['admin_note' => 'nullable|string|max:500']);
 
-        if ($leave->status !== 'pending') {
-            return back()->with('error', 'This request has already been actioned.');
+        try {
+            $this->leaveService->rejectLeave($leave->id, Auth::guard('admin')->id(), $request->admin_note);
+        } catch (\Exception $e) {
+            return back()->with('error', $e->getMessage());
         }
 
-        $this->leaveService->rejectLeave($leave->id, Auth::guard('admin')->id(), $request->admin_note);
         return redirect()->route('admin.leave.index')->with('success', 'Leave rejected.');
     }
 

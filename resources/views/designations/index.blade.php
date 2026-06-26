@@ -3,9 +3,43 @@
 @section('page-title', 'Designations')
 
 @section('content')
+{{-- Filters --}}
+<div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 mb-5">
+    <form method="GET" action="{{ route('admin.designations.index') }}" class="flex flex-wrap gap-3 items-end">
+        <div class="flex-1 min-w-[180px]">
+            <label class="block text-xs font-medium text-gray-600 mb-1">Search</label>
+            <input type="text" name="search" value="{{ request('search') }}" placeholder="Designation or department…"
+                   class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+        </div>
+        <div class="min-w-[160px]">
+            <label class="block text-xs font-medium text-gray-600 mb-1">Department</label>
+            <select name="department_id" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                <option value="">All Departments</option>
+                @foreach($departments as $dept)
+                    <option value="{{ $dept->id }}" {{ request('department_id') == $dept->id ? 'selected' : '' }}>
+                        {{ $dept->name }}
+                    </option>
+                @endforeach
+            </select>
+        </div>
+        <div class="min-w-[130px]">
+            <label class="block text-xs font-medium text-gray-600 mb-1">Status</label>
+            <select name="status" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                <option value="">All Status</option>
+                <option value="active"   {{ request('status') === 'active'   ? 'selected' : '' }}>Active</option>
+                <option value="inactive" {{ request('status') === 'inactive' ? 'selected' : '' }}>Inactive</option>
+            </select>
+        </div>
+        <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition">
+            <i class="fas fa-search mr-1"></i> Filter
+        </button>
+        <a href="{{ route('admin.designations.index') }}" class="text-sm text-gray-500 hover:text-gray-700 py-2">Clear</a>
+    </form>
+</div>
+
 <div class="bg-white rounded-xl shadow-sm border border-gray-100">
     <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-        <h2 class="font-semibold text-gray-800">All Designations</h2>
+        <h2 class="font-semibold text-gray-800">All Designations <span class="text-gray-400 font-normal text-sm">({{ $designations->total() }})</span></h2>
         <a href="{{ route('admin.designations.create') }}"
            class="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition flex items-center gap-2">
             <i class="fas fa-plus text-xs"></i> Add Designation

@@ -54,4 +54,20 @@ class SalaryService
     {
         return $this->salaryRepo->getHistoryForEmployee($employee->id);
     }
+
+    public function getApiShowData(Employee $employee): array
+    {
+        return [
+            'current' => $this->getCurrentSalary($employee->id),
+            'history' => $this->getHistory($employee),
+        ];
+    }
+
+    public function getManagePageData(Employee $employee): array
+    {
+        return [
+            'current' => $this->getCurrentSalary($employee->id),
+            'history' => $this->getHistory($employee)->take(5),
+        ];
+    }
 }

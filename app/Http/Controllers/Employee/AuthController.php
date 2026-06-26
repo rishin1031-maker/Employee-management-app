@@ -3,14 +3,17 @@
 namespace App\Http\Controllers\Employee;
 
 use App\Http\Controllers\Controller;
+use App\Services\AuthService;
 use App\Services\EmployeeService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Hash;
 
 class AuthController extends Controller
 {
-    public function __construct(private EmployeeService $employeeService) {}
+    public function __construct(
+        private EmployeeService $employeeService,
+        private AuthService $authService,
+    ) {}
 
     public function showChangePassword()
     {
@@ -26,7 +29,7 @@ class AuthController extends Controller
 
         $employee = Auth::guard('employee')->user();
 
-        if (!Hash::check($request->current_password, $employee->password)) {
+        if (!$this->authService->verifyEmployeePassword($employee, $request->current_password)) {
             return back()->withErrors(['current_password' => 'Current password is incorrect.']);
         }
 

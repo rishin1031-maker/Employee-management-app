@@ -7,7 +7,7 @@ use Illuminate\Pagination\LengthAwarePaginator;
 
 interface DepartmentRepositoryInterface extends BaseRepositoryInterface
 {
-    public function paginateWithCounts(int $perPage = 10): LengthAwarePaginator;
+    public function paginateWithCounts(array $filters = [], int $perPage = 10): LengthAwarePaginator;
     public function getActive(): Collection;
     public function toggleStatus(int $id): bool;
     public function hasEmployees(int $id): bool;

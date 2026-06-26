@@ -47,7 +47,11 @@ class EmployeeController extends Controller
 
     public function show(Employee $employee)
     {
-        $employee->load(['department', 'designation']);
+        $employee = $this->employeeService->getEmployeeWithRelations(
+            $employee->id,
+            ['department', 'designation']
+        );
+
         return view('employees.show', compact('employee'));
     }
 

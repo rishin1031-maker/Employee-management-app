@@ -17,10 +17,14 @@ class DesignationController extends Controller
         private DepartmentService  $departmentService,
     ) {}
 
-    public function index()
+    public function index(Request $request)
     {
-        $designations = $this->designationService->getPaginated();
-        return view('designations.index', compact('designations'));
+        $designations = $this->designationService->getPaginated(
+            $request->only(['search', 'status', 'department_id'])
+        );
+        $departments = $this->departmentService->getActive();
+
+        return view('designations.index', compact('designations', 'departments'));
     }
 
     public function create()

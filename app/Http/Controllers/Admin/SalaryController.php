@@ -4,12 +4,16 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Employee;
+use App\Services\EmployeeService;
 use App\Services\SalaryService;
 use Illuminate\Http\Request;
 
 class SalaryController extends Controller
 {
-    public function __construct(private SalaryService $salaryService) {}
+    public function __construct(
+        private SalaryService $salaryService,
+        private EmployeeService $employeeService,
+    ) {}
 
     public function index()
     {
@@ -19,10 +23,17 @@ class SalaryController extends Controller
 
     public function create(Employee $employee)
     {
-        $employee->load(['designation', 'department']);
-        $current = $this->salaryService->getCurrentSalary($employee->id);
-        $history = $this->salaryService->getHistory($employee)->take(5);
-        return view('admin.salary.create', compact('employee', 'current', 'history'));
+        $employee = $this->employeeService->getEmployeeWithRelations(
+            $employee->id,
+            ['designation', 'department']
+        );
+        $salaryData = $this->salaryService->getManagePageData($employee);
+
+        return view('admin.salary.create', [
+            'employee' => $employee,
+            'current'  => $salaryData['current'],
+            'history'  => $salaryData['history'],
+        ]);
     }
 
     public function store(Request $request, Employee $employee)
@@ -47,8 +58,12 @@ class SalaryController extends Controller
 
     public function history(Employee $employee)
     {
-        $employee->load(['department', 'designation']);
+        $employee = $this->employeeService->getEmployeeWithRelations(
+            $employee->id,
+            ['department', 'designation']
+        );
         $history = $this->salaryService->getHistory($employee);
+
         return view('admin.salary.history', compact('employee', 'history'));
     }
 }

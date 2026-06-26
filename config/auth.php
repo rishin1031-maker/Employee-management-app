@@ -50,6 +50,14 @@ return [
             'driver'   => 'session',
             'provider' => 'employees',
         ],
+        'api_admin' => [
+            'driver'   => 'jwt',
+            'provider' => 'admins',
+        ],
+        'api_employee' => [
+            'driver'   => 'jwt',
+            'provider' => 'employees',
+        ],
     ],
 
     /*

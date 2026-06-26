@@ -39,7 +39,8 @@ class NotificationService
     public function markReadAndGetUrl(Model $user, string $id): string
     {
         $notification = $this->notifRepo->findForUser($user, $id);
-        $notification->markAsRead();
+        $this->notifRepo->markRead($user, $id);
+
         return $notification->data['url'] ?? '/';
     }
 }

@@ -7,14 +7,18 @@ use App\Http\Requests\StoreDepartmentRequest;
 use App\Http\Requests\UpdateDepartmentRequest;
 use App\Models\Department;
 use App\Services\DepartmentService;
+use Illuminate\Http\Request;
 
 class DepartmentController extends Controller
 {
     public function __construct(private DepartmentService $departmentService) {}
 
-    public function index()
+    public function index(Request $request)
     {
-        $departments = $this->departmentService->getPaginated();
+        $departments = $this->departmentService->getPaginated(
+            $request->only(['search', 'status'])
+        );
+
         return view('departments.index', compact('departments'));
     }
 

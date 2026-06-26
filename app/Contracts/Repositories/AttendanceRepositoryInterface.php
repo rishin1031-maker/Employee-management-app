@@ -21,5 +21,8 @@ interface AttendanceRepositoryInterface extends BaseRepositoryInterface
     public function deleteBreak(int $breakId): bool;
     public function getTodayPresentCount(): int;
     public function getTodayAbsentCount(): int;
+    public function getTodayMarkedCount(): int;
     public function checkOutWithData(int $employeeId, array $data): Attendance;
+    public function findAttendanceOrFail(int $id): Attendance;
+    public function getRecentForEmployee(int $employeeId, int $limit = 7): Collection;
 }

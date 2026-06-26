@@ -80,4 +80,14 @@ class EmployeeRepository extends BaseRepository implements EmployeeRepositoryInt
                        ->take($limit)
                        ->get();
     }
+
+    public function updateLastLoginAt(int $id): void
+    {
+        Employee::where('id', $id)->update(['last_login_at' => now()]);
+    }
+
+    public function findWithRelations(int $id, array $relations): Employee
+    {
+        return Employee::with($relations)->findOrFail($id);
+    }
 }

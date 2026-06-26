@@ -15,4 +15,6 @@ interface EmployeeRepositoryInterface extends BaseRepositoryInterface
     public function generateEmployeeId(): string;
     public function countByStatus(string $status): int;
     public function getRecentEmployees(int $limit = 5): Collection;
+    public function updateLastLoginAt(int $id): void;
+    public function findWithRelations(int $id, array $relations): Employee;
 }

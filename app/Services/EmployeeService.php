@@ -105,4 +105,17 @@ class EmployeeService
     {
         return $this->employeeRepo->getActiveEmployees();
     }
+
+    public function getEmployeeForProfile(int $id): Employee
+    {
+        return $this->employeeRepo->findWithRelations(
+            $id,
+            ['department', 'designation', 'salary', 'salaryHistories', 'leaveBalance']
+        );
+    }
+
+    public function getEmployeeWithRelations(int $id, array $relations): Employee
+    {
+        return $this->employeeRepo->findWithRelations($id, $relations);
+    }
 }

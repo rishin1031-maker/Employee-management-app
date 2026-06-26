@@ -8,7 +8,7 @@
     <form method="GET" action="{{ route('admin.departments.index') }}" class="flex flex-wrap gap-3 items-end">
         <div class="flex-1 min-w-[180px]">
             <label class="block text-xs font-medium text-gray-600 mb-1">Search</label>
-            <input type="text" name="search" value="{{ request('search') }}" placeholder="Name.."
+            <input type="text" name="search" value="{{ request('search') }}" placeholder="Name or description…"
                    class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
         </div>
         <div class="min-w-[130px]">
@@ -28,7 +28,7 @@
 
 <div class="bg-white rounded-xl shadow-sm border border-gray-100">
     <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-        <h2 class="font-semibold text-gray-800">All Departments</h2>
+        <h2 class="font-semibold text-gray-800">All Departments <span class="text-gray-400 font-normal text-sm">({{ $departments->total() }})</span></h2>
         <a href="{{ route('admin.departments.create') }}"
            class="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition flex items-center gap-2">
             <i class="fas fa-plus text-xs"></i> Add Department
