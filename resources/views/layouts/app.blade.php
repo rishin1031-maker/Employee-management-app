@@ -4,149 +4,161 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>@yield('title', 'EMS Admin')</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <x-theme-init />
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
 </head>
-<body class="bg-gray-100 font-sans">
+<body class="bg-gray-100 dark:bg-gray-900 font-sans text-gray-900 dark:text-gray-100 transition-colors duration-200">
 
-<div class="flex h-screen overflow-hidden">
-
-    {{-- Sidebar --}}
-    <aside class="w-64 bg-gray-900 text-white flex flex-col flex-shrink-0">
-        <div class="flex items-center gap-3 px-6 py-5 border-b border-gray-700">
-            <div class="bg-indigo-600 rounded-lg p-2">
-                <i class="fas fa-users text-white text-lg"></i>
+<x-layout-with-sidebar storage-key="ems-admin-sidebar">
+    <x-slot:sidebar>
+        <div class="flex items-center border-b border-white/10 flex-shrink-0"
+             :class="collapsed ? 'flex-col gap-2 px-2 py-4' : 'justify-between gap-3 px-4 py-5'">
+            <div class="flex items-center gap-3 min-w-0" :class="collapsed && 'justify-center'">
+                <div class="bg-gradient-to-br from-indigo-500 to-indigo-700 rounded-xl p-2.5 flex-shrink-0 shadow-lg shadow-indigo-900/40">
+                    <i class="fas fa-users text-white text-lg"></i>
+                </div>
+                <span x-show="!collapsed" x-cloak class="text-xl font-bold tracking-wide truncate">EMS Admin</span>
             </div>
-            <span class="text-xl font-bold tracking-wide">EMS Admin</span>
+            <x-sidebar-toggle />
         </div>
 
-        <nav class="flex-1 px-4 py-6 space-y-1 overflow-y-auto">
-            <a href="{{ route('admin.dashboard') }}"
-            class="flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium
-                    {{ request()->routeIs('admin.dashboard') ? 'bg-indigo-600 text-white' : 'text-gray-300 hover:bg-gray-800 hover:text-white' }}">
-                <i class="fas fa-gauge-high w-5 text-center"></i> Dashboard
-            </a>
-            <a href="{{ route('admin.employees.index') }}"
-            class="flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium
-                    {{ request()->routeIs('admin.employees.*') ? 'bg-indigo-600 text-white' : 'text-gray-300 hover:bg-gray-800 hover:text-white' }}">
-                <i class="fas fa-id-card w-5 text-center"></i> Employees
-            </a>
-            <a href="{{ route('admin.departments.index') }}"
-            class="flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium
-                    {{ request()->routeIs('admin.departments.*') ? 'bg-indigo-600 text-white' : 'text-gray-300 hover:bg-gray-800 hover:text-white' }}">
-                <i class="fas fa-building w-5 text-center"></i> Departments
-            </a>
-            <a href="{{ route('admin.designations.index') }}"
-            class="flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium
-                    {{ request()->routeIs('admin.designations.*') ? 'bg-indigo-600 text-white' : 'text-gray-300 hover:bg-gray-800 hover:text-white' }}">
-                <i class="fas fa-briefcase w-5 text-center"></i> Designations
-            </a>
-            <a href="{{ route('admin.leave.index') }}"
-            class="flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium
-                    {{ request()->routeIs('admin.leave.*') ? 'bg-indigo-600 text-white' : 'text-gray-300 hover:bg-gray-800 hover:text-white' }}">
-                <i class="fas fa-calendar-xmark w-5 text-center"></i> Leave Requests
-            </a>
-            <a href="{{ route('admin.attendance.index') }}"
-            class="flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium
-                    {{ request()->routeIs('admin.attendance.*') ? 'bg-indigo-600 text-white' : 'text-gray-300 hover:bg-gray-800 hover:text-white' }}">
-                <i class="fas fa-clock w-5 text-center"></i> Attendance
-            </a>
-            <a href="{{ route('admin.salary.index') }}"
-            class="flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium
-                    {{ request()->routeIs('admin.salary.*') ? 'bg-indigo-600 text-white' : 'text-gray-300 hover:bg-gray-800 hover:text-white' }}">
-                <i class="fas fa-money-bill w-5 text-center"></i> Salary
-            </a>
-            <a href="{{ route('admin.payroll.index') }}"
-            class="flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium
-                    {{ request()->routeIs('admin.payroll.*') ? 'bg-indigo-600 text-white' : 'text-gray-300 hover:bg-gray-800 hover:text-white' }}">
-                <i class="fas fa-chart-bar w-5 text-center"></i> Payroll
-            </a>
-    </nav>
+        <nav class="flex-1 px-2 py-6 space-y-1 overflow-y-auto" :class="!collapsed && 'px-4'">
+            <x-sidebar-nav-link
+                :href="route('admin.dashboard')"
+                icon="fa-gauge-high"
+                label="Dashboard"
+                :active="request()->routeIs('admin.dashboard')"
+            />
+            <x-sidebar-nav-link
+                :href="route('admin.employees.index')"
+                icon="fa-id-card"
+                label="Employees"
+                :active="request()->routeIs('admin.employees.*')"
+            />
+            <x-sidebar-nav-link
+                :href="route('admin.departments.index')"
+                icon="fa-building"
+                label="Departments"
+                :active="request()->routeIs('admin.departments.*')"
+            />
+            <x-sidebar-nav-link
+                :href="route('admin.designations.index')"
+                icon="fa-briefcase"
+                label="Designations"
+                :active="request()->routeIs('admin.designations.*')"
+            />
+            <x-sidebar-nav-link
+                :href="route('admin.leave.index')"
+                icon="fa-calendar-xmark"
+                label="Leave Requests"
+                :active="request()->routeIs('admin.leave.*')"
+            />
+            <x-sidebar-nav-link
+                :href="route('admin.attendance.index')"
+                icon="fa-clock"
+                label="Attendance"
+                :active="request()->routeIs('admin.attendance.*')"
+            />
+            <x-sidebar-nav-link
+                :href="route('admin.salary.index')"
+                icon="fa-money-bill"
+                label="Salary"
+                :active="request()->routeIs('admin.salary.*')"
+            />
+            <x-sidebar-nav-link
+                :href="route('admin.payroll.index')"
+                icon="fa-chart-bar"
+                label="Payroll"
+                :active="request()->routeIs('admin.payroll.*')"
+            />
+        </nav>
 
-        <div class="px-4 py-4 border-t border-gray-700">
+        <div class="px-2 py-4 border-t border-white/10 space-y-1 flex-shrink-0" :class="!collapsed && 'px-4'">
+            <div class="flex items-center py-2"
+                 :class="collapsed ? 'justify-center px-0' : 'justify-between px-4'">
+                <span x-show="!collapsed" x-cloak class="text-xs text-gray-400">Theme</span>
+                <x-theme-toggle class="!p-1.5 text-gray-400 hover:bg-gray-800 hover:text-white" />
+            </div>
             <form method="POST" action="{{ route('logout') }}">
                 @csrf
                 <button type="submit"
-                        class="flex items-center gap-3 w-full px-4 py-2.5 rounded-lg text-sm font-medium text-gray-300 hover:bg-red-700 hover:text-white transition">
-                    <i class="fas fa-right-from-bracket w-5 text-center"></i> Logout
+                        title="Logout"
+                        class="flex items-center gap-3 w-full px-4 py-2.5 rounded-lg text-sm font-medium text-gray-300 hover:bg-red-700 hover:text-white transition"
+                        :class="collapsed ? 'justify-center !px-2' : ''">
+                    <i class="fas fa-right-from-bracket w-5 text-center flex-shrink-0"></i>
+                    <span x-show="!collapsed" x-cloak>Logout</span>
                 </button>
             </form>
         </div>
-    </aside>
+    </x-slot:sidebar>
 
     {{-- Main Content --}}
-    <div class="flex-1 flex flex-col overflow-hidden">
-        {{-- Topbar --}}
-        <header class="bg-white shadow-sm px-6 py-4 flex items-center justify-between">
-            <h1 class="text-lg font-semibold text-gray-800">@yield('page-title', 'Dashboard')</h1>
-
-            <div class="flex items-center gap-4">
-                {{-- Live clock --}}
-                <div class="text-right hidden sm:block">
-                    <p id="live-time" class="text-sm font-semibold text-gray-800"></p>
-                    <p id="live-date" class="text-xs text-gray-400"></p>
-                </div>
-
-                {{-- Bell --}}
-                <x-notification-bell guard="admin" />
-
-                {{-- Admin avatar --}}
-                <div class="flex items-center gap-3">
-                    <div class="w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center text-white text-sm font-bold">
-                        {{ strtoupper(substr(Auth::guard('admin')->user()->name, 0, 1)) }}
-                    </div>
-                    <span class="text-sm text-gray-700">{{ Auth::guard('admin')->user()->name }}</span>
-                </div>
+    <header class="ems-header px-6 py-3.5 flex items-center justify-between transition-colors duration-200 sticky top-0 z-10">
+        <div class="flex items-center gap-3 min-w-0">
+            <button type="button"
+                    @click="toggle()"
+                    class="lg:hidden p-2 rounded-lg text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                    aria-label="Toggle sidebar">
+                <i class="fas fa-bars"></i>
+            </button>
+            <div>
+                <h1 class="text-lg font-semibold text-gray-800 dark:text-gray-100 truncate leading-tight">@yield('page-title', 'Dashboard')</h1>
+                <p class="text-xs text-gray-400 hidden sm:block">Employee Management System</p>
             </div>
-        </header>
+        </div>
 
-        <script>
-        function updateClock() {
-            const now = new Date();
+        <div class="flex items-center gap-2 sm:gap-3">
+            <div class="ems-clock text-right hidden sm:block">
+                <p id="live-time" class="text-sm font-semibold text-gray-800 dark:text-gray-100 tabular-nums"></p>
+                <p id="live-date" class="text-xs text-gray-400"></p>
+            </div>
 
-            // Time — 12hr format with seconds
-            const time = now.toLocaleTimeString('en-US', {
-                hour:   '2-digit',
-                minute: '2-digit',
-                second: '2-digit',
-                hour12: true
-            });
+            <x-theme-toggle />
 
-            // Date — Monday, 16 June 2026
-            const date = now.toLocaleDateString('en-US', {
-                weekday: 'long',
-                day:     'numeric',
-                month:   'long',
-                year:    'numeric'
-            });
+            <x-notification-bell guard="admin" />
 
-            document.getElementById('live-time').textContent = time;
-            document.getElementById('live-date').textContent = date;
-        }
-
-        updateClock();                    // run immediately on load
-        setInterval(updateClock, 1000);  // update every second
-        </script>
-
-        {{-- Page Content --}}
-        <main class="flex-1 overflow-y-auto p-6">
-            {{-- Flash Messages --}}
-            @if(session('success'))
-                <div class="mb-4 flex items-center gap-3 bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg text-sm">
-                    <i class="fas fa-circle-check"></i> {{ session('success') }}
+            <div class="ems-user-chip flex items-center gap-2.5">
+                <div class="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-indigo-700 flex items-center justify-center text-white text-sm font-bold shadow-sm">
+                    {{ strtoupper(substr(Auth::guard('admin')->user()->name, 0, 1)) }}
                 </div>
-            @endif
-            @if(session('error'))
-                <div class="mb-4 flex items-center gap-3 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
-                    <i class="fas fa-circle-xmark"></i> {{ session('error') }}
-                </div>
-            @endif
+                <span class="text-sm font-medium text-gray-700 dark:text-gray-200 hidden sm:inline pr-1">{{ Auth::guard('admin')->user()->name }}</span>
+            </div>
+        </div>
+    </header>
 
-            @yield('content')
-        </main>
-    </div>
-</div>
+    <script>
+    function updateClock() {
+        const now = new Date();
+
+        const time = now.toLocaleTimeString('en-US', {
+            hour:   '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+            hour12: true
+        });
+
+        const date = now.toLocaleDateString('en-US', {
+            weekday: 'long',
+            day:     'numeric',
+            month:   'long',
+            year:    'numeric'
+        });
+
+        document.getElementById('live-time').textContent = time;
+        document.getElementById('live-date').textContent = date;
+    }
+
+    updateClock();
+    setInterval(updateClock, 1000);
+    </script>
+
+    <main class="ems-main flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
+        <x-flash-messages />
+
+        @yield('content')
+    </main>
+</x-layout-with-sidebar>
 
 </body>
 </html>

@@ -47,7 +47,7 @@ class LeaveController extends Controller
             return redirect()->route('employee.leave.index')
                 ->with('success', 'Leave request submitted successfully.');
         } catch (\Exception $e) {
-            return back()->withErrors(['type' => $e->getMessage()])->withInput();
+            return back()->withErrors(['type' => $this->userFacingMessage($e)])->withInput();
         }
     }
 
@@ -57,7 +57,7 @@ class LeaveController extends Controller
             $this->leaveService->cancelLeave($leave->id, Auth::guard('employee')->id());
             return back()->with('success', 'Leave request cancelled successfully.');
         } catch (\Exception $e) {
-            return back()->with('error', $e->getMessage());
+            return back()->with('error', $this->userFacingMessage($e));
         }
     }
 }

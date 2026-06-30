@@ -112,6 +112,7 @@ Route::middleware('employee.auth')->prefix('employee')->name('employee.')->group
         Route::post('/profile/phone', [EmpProfileController::class, 'updatePhone'])->name('profile.phone');
 
         Route::get('/attendance',      [EmpAttendanceController::class, 'index'])->name('attendance.index');
+        Route::get('/attendance/charts', [EmpAttendanceController::class, 'charts'])->name('attendance.charts');
         Route::post('/attendance/in',  [EmpAttendanceController::class, 'checkIn'])->name('attendance.checkin');
         Route::post('/attendance/out', [EmpAttendanceController::class, 'checkOut'])->name('attendance.checkout');
 

@@ -23,13 +23,13 @@
         ];
     @endphp
     @foreach($cards as $card)
-    <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-4 flex items-center gap-4">
-        <div class="w-11 h-11 rounded-xl flex items-center justify-center {{ $colors[$card['color']] }} flex-shrink-0">
+    <div class="ems-stat-card p-4 flex items-center gap-4">
+        <div class="w-12 h-12 rounded-xl flex items-center justify-center {{ $colors[$card['color']] }} flex-shrink-0">
             <i class="fas {{ $card['icon'] }} text-lg"></i>
         </div>
         <div>
-            <p class="text-2xl font-bold text-gray-900">{{ $card['value'] }}</p>
-            <p class="text-xs text-gray-500 mt-0.5">{{ $card['label'] }}</p>
+            <p class="text-2xl font-bold text-gray-900 dark:text-gray-100 tracking-tight">{{ $card['value'] }}</p>
+            <p class="text-xs text-gray-500 mt-0.5 font-medium">{{ $card['label'] }}</p>
         </div>
     </div>
     @endforeach
@@ -37,41 +37,41 @@
 
 {{-- Stats Row 2 — Today's attendance + pending leaves --}}
 <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-5">
-    <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-4 flex items-center gap-4">
-        <div class="w-11 h-11 rounded-xl bg-green-50 text-green-600 flex items-center justify-center flex-shrink-0">
+    <div class="ems-stat-card p-4 flex items-center gap-4">
+        <div class="w-12 h-12 rounded-xl bg-green-50 text-green-600 flex items-center justify-center flex-shrink-0">
             <i class="fas fa-clock-rotate-left text-lg"></i>
         </div>
         <div>
-            <p class="text-2xl font-bold text-gray-900">{{ $todayPresent }}</p>
-            <p class="text-xs text-gray-500 mt-0.5">Present today</p>
+            <p class="text-2xl font-bold text-gray-900 dark:text-gray-100 tracking-tight">{{ $todayPresent }}</p>
+            <p class="text-xs text-gray-500 mt-0.5 font-medium">Present today</p>
         </div>
     </div>
-    <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-4 flex items-center gap-4">
-        <div class="w-11 h-11 rounded-xl bg-red-50 text-red-600 flex items-center justify-center flex-shrink-0">
+    <div class="ems-stat-card p-4 flex items-center gap-4">
+        <div class="w-12 h-12 rounded-xl bg-red-50 text-red-600 flex items-center justify-center flex-shrink-0">
             <i class="fas fa-user-minus text-lg"></i>
         </div>
         <div>
-            <p class="text-2xl font-bold text-gray-900">{{ $todayAbsent }}</p>
-            <p class="text-xs text-gray-500 mt-0.5">Absent today</p>
+            <p class="text-2xl font-bold text-gray-900 dark:text-gray-100 tracking-tight">{{ $todayAbsent }}</p>
+            <p class="text-xs text-gray-500 mt-0.5 font-medium">Absent today</p>
         </div>
     </div>
-    <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-4 flex items-center gap-4">
-        <div class="w-11 h-11 rounded-xl bg-gray-100 text-gray-500 flex items-center justify-center flex-shrink-0">
+    <div class="ems-stat-card p-4 flex items-center gap-4">
+        <div class="w-12 h-12 rounded-xl bg-gray-100 text-gray-500 flex items-center justify-center flex-shrink-0">
             <i class="fas fa-circle-question text-lg"></i>
         </div>
         <div>
-            <p class="text-2xl font-bold text-gray-900">{{ $todayNotMarked }}</p>
-            <p class="text-xs text-gray-500 mt-0.5">Not marked</p>
+            <p class="text-2xl font-bold text-gray-900 dark:text-gray-100 tracking-tight">{{ $todayNotMarked }}</p>
+            <p class="text-xs text-gray-500 mt-0.5 font-medium">Not marked</p>
         </div>
     </div>
     <a href="{{ route('admin.leave.index', ['status' => 'pending']) }}"
-       class="bg-white rounded-xl border border-yellow-200 shadow-sm p-4 flex items-center gap-4 hover:border-yellow-400 transition">
-        <div class="w-11 h-11 rounded-xl bg-yellow-50 text-yellow-600 flex items-center justify-center flex-shrink-0">
+       class="ems-stat-card p-4 flex items-center gap-4 hover:border-yellow-300 dark:hover:border-yellow-600 border-yellow-200/60">
+        <div class="w-12 h-12 rounded-xl bg-yellow-50 text-yellow-600 flex items-center justify-center flex-shrink-0">
             <i class="fas fa-calendar-xmark text-lg"></i>
         </div>
         <div>
-            <p class="text-2xl font-bold text-gray-900">{{ $pendingLeaves }}</p>
-            <p class="text-xs text-gray-500 mt-0.5">Pending leaves</p>
+            <p class="text-2xl font-bold text-gray-900 dark:text-gray-100 tracking-tight">{{ $pendingLeaves }}</p>
+            <p class="text-xs text-gray-500 mt-0.5 font-medium">Pending leaves</p>
         </div>
     </a>
 </div>

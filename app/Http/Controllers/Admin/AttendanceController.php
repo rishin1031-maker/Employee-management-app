@@ -5,25 +5,44 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\AttendanceBreak;
 use App\Services\AttendanceService;
+use App\Services\DepartmentService;
+use App\Services\DesignationService;
 use Illuminate\Http\Request;
 
 class AttendanceController extends Controller
 {
-    public function __construct(private AttendanceService $attendanceService) {}
+    public function __construct(
+        private AttendanceService $attendanceService,
+        private DepartmentService $departmentService,
+        private DesignationService $designationService,
+    ) {}
 
     public function index(Request $request)
     {
         $activeView = $request->get('view', 'daily');
         $date       = $request->get('date', today()->toDateString());
         $month      = $request->get('month', now()->format('Y-m'));
+        $filters    = $request->only(['search', 'department_id', 'designation_id', 'employee_id']);
 
-        $employees     = $this->attendanceService->getDailyReport($date);
+        $employees     = $this->attendanceService->getDailyReport($date, $filters);
         $monthlyReport = $activeView === 'monthly'
-            ? $this->attendanceService->getMonthlyReport($month)
+            ? $this->attendanceService->getMonthlyReport($month, $filters)
             : [];
 
+        $departments  = $this->departmentService->getActive();
+        $designations = $this->designationService->getActiveWithDepartment();
+        $statistics   = $this->attendanceService->getAdminStatistics($filters);
+
         return view('admin.attendance.index', compact(
-            'employees', 'date', 'month', 'activeView', 'monthlyReport'
+            'employees',
+            'date',
+            'month',
+            'activeView',
+            'monthlyReport',
+            'departments',
+            'designations',
+            'filters',
+            'statistics',
         ));
     }
 

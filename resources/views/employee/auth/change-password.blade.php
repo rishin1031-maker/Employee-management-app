@@ -4,11 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Change Password — EMS</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <x-theme-init />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
 </head>
-<body class="min-h-screen bg-gray-100 flex items-center justify-center p-4">
+<body class="min-h-screen bg-gray-100 dark:bg-gray-900 flex items-center justify-center p-4 transition-colors duration-200">
+<div class="absolute top-4 right-4">
+    <x-theme-toggle />
+</div>
 <div class="w-full max-w-md">
-    <div class="bg-white rounded-2xl shadow-xl p-8">
+    <div class="bg-white rounded-2xl shadow-xl p-8 transition-colors duration-200">
         <div class="text-center mb-6">
             <div class="inline-flex items-center justify-center w-14 h-14 bg-yellow-100 rounded-2xl mb-3">
                 <svg class="w-7 h-7 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -1,9 +1,11 @@
 <?php
 
+use App\Support\DatabaseConnectionErrors;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -46,5 +48,22 @@ return Application::configure(basePath: dirname(__DIR__))
             if ($request->is('api/*')) {
                 return response()->json(['success' => false, 'message' => 'Unauthorized.'], 401);
             }
+        });
+
+        $exceptions->render(function (\Throwable $e, Request $request) {
+            if (! DatabaseConnectionErrors::isUnavailable($e)) {
+                return null;
+            }
+
+            Log::error('Database server unavailable', ['exception' => $e]);
+
+            if ($request->is('api/*') || $request->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => DatabaseConnectionErrors::userMessage(),
+                ], 503);
+            }
+
+            return response()->view('errors.database-unavailable', [], 503);
         });
     })->create();

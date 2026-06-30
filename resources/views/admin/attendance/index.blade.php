@@ -3,17 +3,85 @@
 @section('page-title','Attendance Management')
 
 @section('content')
+@php
+    $filterParams = request()->only(['search', 'department_id', 'designation_id', 'employee_id']);
+@endphp
+
+{{-- Attendance statistics --}}
+<div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-5">
+    <div class="ems-stat-card p-5">
+        <div class="flex items-start justify-between gap-3">
+            <div>
+                <p class="text-xs font-medium text-gray-500 uppercase tracking-wide">Present Today</p>
+                <p class="text-3xl font-bold text-green-600 mt-1">{{ $statistics['today']['present'] }}</p>
+                <p class="text-xs text-gray-400 mt-1">{{ $statistics['today']['label'] }}</p>
+            </div>
+            <div class="w-11 h-11 rounded-xl bg-green-50 text-green-600 flex items-center justify-center flex-shrink-0">
+                <i class="fas fa-user-check text-lg"></i>
+            </div>
+        </div>
+        <div class="mt-4 pt-4 border-t border-gray-100 grid grid-cols-2 gap-2 text-xs">
+            <div class="flex justify-between gap-2">
+                <span class="text-gray-500">Active staff</span>
+                <span class="font-semibold text-gray-800">{{ $statistics['active_employees'] }}</span>
+            </div>
+            <div class="flex justify-between gap-2">
+                <span class="text-gray-500">Absent</span>
+                <span class="font-semibold text-red-600">{{ $statistics['today']['absent'] }}</span>
+            </div>
+            <div class="flex justify-between gap-2">
+                <span class="text-gray-500">On leave</span>
+                <span class="font-semibold text-blue-600">{{ $statistics['today']['on_leave'] }}</span>
+            </div>
+            <div class="flex justify-between gap-2">
+                <span class="text-gray-500">Not marked</span>
+                <span class="font-semibold text-gray-600">{{ $statistics['today']['not_marked'] }}</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="ems-stat-card p-5">
+        <div class="flex items-start justify-between gap-3">
+            <div>
+                <p class="text-xs font-medium text-gray-500 uppercase tracking-wide">Present This Week</p>
+                <p class="text-3xl font-bold text-indigo-600 mt-1">{{ $statistics['week']['present'] }}</p>
+                <p class="text-xs text-gray-400 mt-1">{{ $statistics['week']['label'] }}</p>
+            </div>
+            <div class="w-11 h-11 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center flex-shrink-0">
+                <i class="fas fa-calendar-week text-lg"></i>
+            </div>
+        </div>
+        <p class="mt-4 pt-4 border-t border-gray-100 text-xs text-gray-500">
+            Total present records from Monday through today{{ request()->hasAny(['search', 'department_id', 'designation_id', 'employee_id']) ? ' (filtered)' : '' }}.
+        </p>
+    </div>
+
+    <div class="ems-stat-card p-5">
+        <div class="flex items-start justify-between gap-3">
+            <div>
+                <p class="text-xs font-medium text-gray-500 uppercase tracking-wide">Present This Month</p>
+                <p class="text-3xl font-bold text-purple-600 mt-1">{{ $statistics['month']['present'] }}</p>
+                <p class="text-xs text-gray-400 mt-1">{{ $statistics['month']['label'] }}</p>
+            </div>
+            <div class="w-11 h-11 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center flex-shrink-0">
+                <i class="fas fa-calendar-days text-lg"></i>
+            </div>
+        </div>
+        <p class="mt-4 pt-4 border-t border-gray-100 text-xs text-gray-500">
+            Total present records from the 1st of the month through today{{ request()->hasAny(['search', 'department_id', 'designation_id', 'employee_id']) ? ' (filtered)' : '' }}.
+        </p>
+    </div>
+</div>
+
 {{-- Tabs --}}
-<div class="flex gap-2 mb-5">
-    <a href="{{ route('admin.attendance.index', ['view' => 'daily', 'date' => $date]) }}"
-       class="px-4 py-2 rounded-lg text-sm font-medium transition
-              {{ $activeView === 'daily' ? 'bg-indigo-600 text-white' : 'bg-white text-gray-600 border border-gray-200 hover:border-indigo-400' }}">
-        Daily View
+<div class="ems-tabs mb-5">
+    <a href="{{ route('admin.attendance.index', array_merge($filterParams, ['view' => 'daily', 'date' => $date])) }}"
+       class="ems-tab {{ $activeView === 'daily' ? 'is-active' : '' }}">
+        <i class="fas fa-calendar-day mr-1.5 text-xs"></i> Daily View
     </a>
-    <a href="{{ route('admin.attendance.index', ['view' => 'monthly', 'month' => $month]) }}"
-       class="px-4 py-2 rounded-lg text-sm font-medium transition
-              {{ $activeView === 'monthly' ? 'bg-indigo-600 text-white' : 'bg-white text-gray-600 border border-gray-200 hover:border-indigo-400' }}">
-        Monthly Report
+    <a href="{{ route('admin.attendance.index', array_merge($filterParams, ['view' => 'monthly', 'month' => $month])) }}"
+       class="ems-tab {{ $activeView === 'monthly' ? 'is-active' : '' }}">
+        <i class="fas fa-calendar mr-1.5 text-xs"></i> Monthly Report
     </a>
 </div>
 
@@ -24,15 +92,49 @@
 {{-- ============================================================ --}}
 
 <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-4 mb-5">
-    <form method="GET" class="flex items-center gap-3">
+    <form method="GET" class="flex flex-wrap gap-3 items-end">
         <input type="hidden" name="view" value="daily">
-        <label class="text-sm font-medium text-gray-700">Date</label>
-        <input type="date" name="date" value="{{ $date }}"
-               class="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+        <div class="min-w-[140px]">
+            <label class="block text-xs font-medium text-gray-600 mb-1">Date</label>
+            <input type="date" name="date" value="{{ $date }}"
+                   class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+        </div>
+        <div class="flex-1 min-w-[180px]">
+            <label class="block text-xs font-medium text-gray-600 mb-1">Search employee</label>
+            <input type="text" name="search" value="{{ request('search') }}"
+                   placeholder="Name, email, or ID (e.g. EMP001)"
+                   class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+        </div>
+        <div class="min-w-[160px]">
+            <label class="block text-xs font-medium text-gray-600 mb-1">Department</label>
+            <select name="department_id"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                <option value="">All Departments</option>
+                @foreach($departments as $dept)
+                    <option value="{{ $dept->id }}" {{ request('department_id') == $dept->id ? 'selected' : '' }}>
+                        {{ $dept->name }}
+                    </option>
+                @endforeach
+            </select>
+        </div>
+        <div class="min-w-[180px]">
+            <label class="block text-xs font-medium text-gray-600 mb-1">Designation</label>
+            <select name="designation_id"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                <option value="">All Designations</option>
+                @foreach($designations as $desig)
+                    <option value="{{ $desig->id }}" {{ request('designation_id') == $desig->id ? 'selected' : '' }}>
+                        {{ $desig->name }}{{ $desig->department ? ' — ' . $desig->department->name : '' }}
+                    </option>
+                @endforeach
+            </select>
+        </div>
         <button type="submit"
-                class="bg-indigo-600 hover:bg-indigo-700 text-white text-sm px-4 py-2 rounded-lg transition">
-            Load
+                class="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition">
+            <i class="fas fa-search mr-1"></i> Apply
         </button>
+        <a href="{{ route('admin.attendance.index', ['view' => 'daily', 'date' => $date]) }}"
+           class="text-sm text-gray-500 hover:text-gray-700 py-2">Clear</a>
     </form>
 </div>
 
@@ -55,7 +157,7 @@
                 </tr>
             </thead>
             <tbody class="divide-y divide-gray-50">
-                @foreach($employees as $emp)
+                @forelse($employees as $emp)
                 @php $att = $emp->attendances->first(); @endphp
                 <tr class="hover:bg-gray-50">
 
@@ -63,6 +165,14 @@
                     <td class="px-5 py-3">
                         <p class="font-medium text-gray-900">{{ $emp->name }}</p>
                         <p class="text-xs text-gray-400">{{ $emp->employee_id }}</p>
+                        @if($emp->department || $emp->designation)
+                        <p class="text-xs text-gray-500 mt-0.5">
+                            {{ $emp->department?->name ?? '—' }}
+                            @if($emp->designation)
+                                · {{ $emp->designation->name }}
+                            @endif
+                        </p>
+                        @endif
                     </td>
 
                     {{-- Status & hours --}}
@@ -215,7 +325,14 @@
                         </div>
                     </td>
                 </tr>
-                @endforeach
+                @empty
+                <tr>
+                    <td colspan="5" class="px-6 py-12 text-center text-gray-400">
+                        <i class="fas fa-user-slash text-2xl mb-2 block"></i>
+                        No employees match your filters.
+                    </td>
+                </tr>
+                @endforelse
             </tbody>
         </table>
     </div>
@@ -228,15 +345,49 @@
 {{-- ============================================================ --}}
 
 <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-4 mb-5">
-    <form method="GET" class="flex items-center gap-3">
+    <form method="GET" class="flex flex-wrap gap-3 items-end">
         <input type="hidden" name="view" value="monthly">
-        <label class="text-sm font-medium text-gray-700">Month</label>
-        <input type="month" name="month" value="{{ $month }}"
-               class="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+        <div class="min-w-[140px]">
+            <label class="block text-xs font-medium text-gray-600 mb-1">Month</label>
+            <input type="month" name="month" value="{{ $month }}"
+                   class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+        </div>
+        <div class="flex-1 min-w-[180px]">
+            <label class="block text-xs font-medium text-gray-600 mb-1">Search employee</label>
+            <input type="text" name="search" value="{{ request('search') }}"
+                   placeholder="Name, email, or ID (e.g. EMP001)"
+                   class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+        </div>
+        <div class="min-w-[160px]">
+            <label class="block text-xs font-medium text-gray-600 mb-1">Department</label>
+            <select name="department_id"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                <option value="">All Departments</option>
+                @foreach($departments as $dept)
+                    <option value="{{ $dept->id }}" {{ request('department_id') == $dept->id ? 'selected' : '' }}>
+                        {{ $dept->name }}
+                    </option>
+                @endforeach
+            </select>
+        </div>
+        <div class="min-w-[180px]">
+            <label class="block text-xs font-medium text-gray-600 mb-1">Designation</label>
+            <select name="designation_id"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                <option value="">All Designations</option>
+                @foreach($designations as $desig)
+                    <option value="{{ $desig->id }}" {{ request('designation_id') == $desig->id ? 'selected' : '' }}>
+                        {{ $desig->name }}{{ $desig->department ? ' — ' . $desig->department->name : '' }}
+                    </option>
+                @endforeach
+            </select>
+        </div>
         <button type="submit"
-                class="bg-indigo-600 hover:bg-indigo-700 text-white text-sm px-4 py-2 rounded-lg transition">
-            View
+                class="bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition">
+            <i class="fas fa-search mr-1"></i> Apply
         </button>
+        <a href="{{ route('admin.attendance.index', ['view' => 'monthly', 'month' => $month]) }}"
+           class="text-sm text-gray-500 hover:text-gray-700 py-2">Clear</a>
     </form>
 </div>
 
@@ -269,6 +420,14 @@
                     <td class="px-5 py-3">
                         <p class="font-medium text-gray-900">{{ $row['employee']->name }}</p>
                         <p class="text-xs text-gray-400">{{ $row['employee']->employee_id }}</p>
+                        @if($row['employee']->department || $row['employee']->designation)
+                        <p class="text-xs text-gray-500 mt-0.5">
+                            {{ $row['employee']->department?->name ?? '—' }}
+                            @if($row['employee']->designation)
+                                · {{ $row['employee']->designation->name }}
+                            @endif
+                        </p>
+                        @endif
                     </td>
 
                     {{-- Present --}}
@@ -318,13 +477,13 @@
 
                     {{-- Details link --}}
                     <td class="px-5 py-3 text-center">
-                        <a href="{{ route('admin.attendance.index', [
+                        <a href="{{ route('admin.attendance.index', array_merge($filterParams, [
                                 'view'        => 'daily',
                                 'date'        => now()->format('Y-m') === $month
                                                     ? today()->toDateString()
                                                     : \Carbon\Carbon::createFromFormat('Y-m', $month)->startOfMonth()->toDateString(),
                                 'employee_id' => $row['employee']->id,
-                           ]) }}"
+                           ])) }}"
                            class="text-xs bg-indigo-50 hover:bg-indigo-100 text-indigo-600 px-3 py-1.5 rounded-lg transition">
                             View days
                         </a>
@@ -334,7 +493,8 @@
                 @empty
                 <tr>
                     <td colspan="8" class="px-6 py-12 text-center text-gray-400">
-                        No attendance records for this month.
+                        <i class="fas fa-user-slash text-2xl mb-2 block"></i>
+                        No employees match your filters for this month.
                     </td>
                 </tr>
                 @endforelse

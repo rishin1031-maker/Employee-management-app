@@ -59,7 +59,7 @@ class LeaveController extends ApiController
                 $request->admin_note
             );
         } catch (\Exception $e) {
-            return $this->error($e->getMessage(), 422);
+            return $this->fromException($e);
         }
 
         return $this->success(ApiTransformer::leave($updated->load('employee')), 'Leave approved.');
@@ -76,7 +76,7 @@ class LeaveController extends ApiController
                 $request->admin_note
             );
         } catch (\Exception $e) {
-            return $this->error($e->getMessage(), 422);
+            return $this->fromException($e);
         }
 
         return $this->success(ApiTransformer::leave($updated->load('employee')), 'Leave rejected.');

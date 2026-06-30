@@ -36,7 +36,7 @@ class LeaveController extends Controller
         try {
             $this->leaveService->approveLeave($leave->id, Auth::guard('admin')->id(), $request->admin_note);
         } catch (\Exception $e) {
-            return back()->with('error', $e->getMessage());
+            return back()->with('error', $this->userFacingMessage($e));
         }
 
         return redirect()->route('admin.leave.index')->with('success', 'Leave approved successfully.');
@@ -49,7 +49,7 @@ class LeaveController extends Controller
         try {
             $this->leaveService->rejectLeave($leave->id, Auth::guard('admin')->id(), $request->admin_note);
         } catch (\Exception $e) {
-            return back()->with('error', $e->getMessage());
+            return back()->with('error', $this->userFacingMessage($e));
         }
 
         return redirect()->route('admin.leave.index')->with('success', 'Leave rejected.');

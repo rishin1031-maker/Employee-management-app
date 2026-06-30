@@ -53,7 +53,7 @@ class DepartmentController extends Controller
             return redirect()->route('admin.departments.index')
                 ->with('success', 'Department deleted successfully.');
         } catch (\Exception $e) {
-            return back()->with('error', $e->getMessage());
+            return back()->with('error', $this->userFacingMessage($e));
         }
     }
 

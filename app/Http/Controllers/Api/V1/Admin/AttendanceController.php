@@ -15,8 +15,9 @@ class AttendanceController extends ApiController
 
     public function daily(Request $request): JsonResponse
     {
-        $date = $request->get('date', today()->toDateString());
-        $employees = $this->attendanceService->getDailyReport($date);
+        $date      = $request->get('date', today()->toDateString());
+        $filters   = $request->only(['search', 'department_id', 'designation_id', 'employee_id']);
+        $employees = $this->attendanceService->getDailyReport($date, $filters);
 
         $items = $employees->map(function ($emp) {
             $att = $emp->attendances->first();
@@ -33,7 +34,8 @@ class AttendanceController extends ApiController
     public function monthly(Request $request): JsonResponse
     {
         $month  = $request->get('month', now()->format('Y-m'));
-        $report = $this->attendanceService->getMonthlyReport($month);
+        $filters = $request->only(['search', 'department_id', 'designation_id', 'employee_id']);
+        $report = $this->attendanceService->getMonthlyReport($month, $filters);
 
         return $this->success(['month' => $month, 'report' => $report]);
     }

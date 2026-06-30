@@ -26,13 +26,32 @@ class AttendanceController extends Controller
         ]);
     }
 
+    public function charts(Request $request)
+    {
+        $employee = Auth::guard('employee')->user();
+        $view     = $request->get('view', 'weekly');
+        $date     = $request->get('date', today()->toDateString());
+        $month    = $request->get('month', now()->format('Y-m'));
+
+        if (!in_array($view, ['daily', 'weekly', 'monthly'], true)) {
+            $view = 'weekly';
+        }
+
+        $chartData = $this->attendanceService->getWorkHoursChartData($employee->id, $view, [
+            'date'  => $date,
+            'month' => $month,
+        ]);
+
+        return view('employee.attendance.charts', compact('chartData', 'view', 'date', 'month'));
+    }
+
     public function checkIn()
     {
         try {
             $att = $this->attendanceService->checkIn(Auth::guard('employee')->id());
             return back()->with('success', 'Checked in at ' . $att->check_in->format('h:i A'));
         } catch (\Exception $e) {
-            return back()->with('error', $e->getMessage());
+            return back()->with('error', $this->userFacingMessage($e));
         }
     }
 
@@ -74,7 +93,7 @@ class AttendanceController extends Controller
 
             return back()->with('success', $msg);
         } catch (\Exception $e) {
-            return back()->with('error', $e->getMessage());
+            return back()->with('error', $this->userFacingMessage($e));
         }
     }
 
@@ -98,9 +117,9 @@ class AttendanceController extends Controller
             return back()->with('success', 'Break started at ' . $break->break_out->format('h:i A') . '. Enjoy your break!');
         } catch (\Exception $e) {
             if ($request->expectsJson()) {
-                return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
+                return response()->json(['success' => false, 'message' => $this->userFacingMessage($e)], 422);
             }
-            return back()->with('error', $e->getMessage());
+            return back()->with('error', $this->userFacingMessage($e));
         }
     }
 
@@ -124,9 +143,9 @@ class AttendanceController extends Controller
             return back()->with('success', 'Break ended. Duration: ' . $break->duration_label);
         } catch (\Exception $e) {
             if ($request->expectsJson()) {
-                return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
+                return response()->json(['success' => false, 'message' => $this->userFacingMessage($e)], 422);
             }
-            return back()->with('error', $e->getMessage());
+            return back()->with('error', $this->userFacingMessage($e));
         }
     }
 

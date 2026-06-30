@@ -11,7 +11,7 @@
 <div class="relative" x-data="{ open: false }" @click.outside="open = false">
     {{-- Bell button --}}
     <button @click="open = !open"
-            class="relative p-2 rounded-lg text-gray-500 hover:bg-gray-100 transition focus:outline-none">
+            class="relative p-2 rounded-lg text-gray-500 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition focus:outline-none">
         <i class="fas fa-bell text-lg"></i>
         @if($unread > 0)
         <span class="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center">
@@ -22,24 +22,24 @@
 
     {{-- Dropdown --}}
     <div x-show="open" x-transition
-         class="absolute right-0 mt-2 w-80 bg-white rounded-xl shadow-xl border border-gray-100 z-50 overflow-hidden">
+         class="absolute right-0 mt-2 w-80 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-100 dark:border-gray-700 z-50 overflow-hidden">
 
         {{-- Header --}}
-        <div class="flex items-center justify-between px-4 py-3 border-b border-gray-100">
-            <h3 class="font-semibold text-gray-800 text-sm">Notifications</h3>
+        <div class="flex items-center justify-between px-4 py-3 border-b border-gray-100 dark:border-gray-700">
+            <h3 class="font-semibold text-gray-800 dark:text-gray-100 text-sm">Notifications</h3>
             <div class="flex items-center gap-2">
                 @if($unread > 0)
                 <form method="POST" action="{{ route($readAllRoute) }}">
                     @csrf
-                    <button type="submit" class="text-xs text-indigo-600 hover:underline">Mark all read</button>
+                    <button type="submit" class="text-xs text-indigo-600 dark:text-indigo-400 hover:underline">Mark all read</button>
                 </form>
                 @endif
-                <a href="{{ route($indexRoute) }}" class="text-xs text-gray-400 hover:text-gray-600">View all</a>
+                <a href="{{ route($indexRoute) }}" class="text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">View all</a>
             </div>
         </div>
 
         {{-- List --}}
-        <div class="max-h-80 overflow-y-auto divide-y divide-gray-50">
+        <div class="max-h-80 overflow-y-auto divide-y divide-gray-50 dark:divide-gray-700">
             @forelse($recent as $notif)
             @php
                 $data  = $notif->data;
@@ -54,15 +54,15 @@
                 $colorClass = $colors[$color] ?? $colors['indigo'];
             @endphp
             <a href="{{ route($readRoute, $notif->id) }}"
-               class="flex items-start gap-3 px-4 py-3 hover:bg-gray-50 transition {{ $notif->read_at ? '' : 'bg-indigo-50/40' }}">
+               class="flex items-start gap-3 px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition {{ $notif->read_at ? '' : 'bg-indigo-50/40' }}">
                 <div class="w-8 h-8 rounded-full {{ $colorClass }} flex items-center justify-center flex-shrink-0 mt-0.5">
                     <i class="fas {{ $data['icon'] ?? 'fa-bell' }} text-xs"></i>
                 </div>
                 <div class="flex-1 min-w-0">
-                    <p class="text-sm font-medium text-gray-900 {{ $notif->read_at ? '' : 'font-semibold' }}">
+                    <p class="text-sm font-medium text-gray-900 dark:text-gray-100 {{ $notif->read_at ? '' : 'font-semibold' }}">
                         {{ $data['title'] ?? 'Notification' }}
                     </p>
-                    <p class="text-xs text-gray-500 mt-0.5 line-clamp-2">{{ $data['message'] ?? '' }}</p>
+                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5 line-clamp-2">{{ $data['message'] ?? '' }}</p>
                     <p class="text-xs text-gray-400 mt-1">{{ $notif->created_at->diffForHumans() }}</p>
                 </div>
                 @if(!$notif->read_at)
@@ -71,7 +71,7 @@
             </a>
             @empty
             <div class="px-4 py-8 text-center">
-                <i class="fas fa-bell-slash text-gray-300 text-2xl mb-2"></i>
+                <i class="fas fa-bell-slash text-gray-300 dark:text-gray-600 text-2xl mb-2"></i>
                 <p class="text-sm text-gray-400">No notifications yet</p>
             </div>
             @endforelse

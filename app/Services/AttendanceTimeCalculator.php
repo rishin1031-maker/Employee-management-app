@@ -9,7 +9,20 @@ use Illuminate\Support\Collection;
 
 class AttendanceTimeCalculator
 {
-    public const TARGET_SECONDS = 28800; // 8 hours
+    public const TARGET_DAILY_HOURS   = 8;
+    public const TARGET_WEEKLY_HOURS  = 48;
+    public const TARGET_MONTHLY_HOURS = 200;
+
+    public const TARGET_SECONDS = self::TARGET_DAILY_HOURS * 3600;
+
+    public static function targetHoursForView(string $view): float
+    {
+        return match ($view) {
+            'weekly'  => self::TARGET_WEEKLY_HOURS,
+            'monthly' => self::TARGET_MONTHLY_HOURS,
+            default   => self::TARGET_DAILY_HOURS,
+        };
+    }
 
     public static function forAttendance(Attendance $attendance, ?Carbon $asOf = null): array
     {
@@ -91,5 +104,32 @@ class AttendanceTimeCalculator
             'progress_percent'          => 0,
             'is_complete'               => false,
         ];
+    }
+
+    public static function hoursToMinutes(float $hours): int
+    {
+        return (int) round($hours * 60);
+    }
+
+    public static function formatHoursAndMinutes(float $hours): string
+    {
+        $totalMinutes = self::hoursToMinutes($hours);
+
+        if ($totalMinutes === 0) {
+            return '0m';
+        }
+
+        $h = intdiv($totalMinutes, 60);
+        $m = $totalMinutes % 60;
+
+        if ($h === 0) {
+            return "{$m}m";
+        }
+
+        if ($m === 0) {
+            return "{$h}h";
+        }
+
+        return "{$h}h {$m}m";
     }
 }

@@ -10,6 +10,10 @@
         <input type="month" name="month" value="{{ $month }}"
                class="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
         <button type="submit" class="bg-indigo-600 text-white text-sm px-4 py-2 rounded-lg hover:bg-indigo-700 transition">View</button>
+        <a href="{{ route('employee.attendance.charts') }}"
+           class="text-sm text-teal-600 hover:text-teal-700 font-medium">
+            <i class="fas fa-chart-bar mr-1"></i> Work hours chart
+        </a>
     </form>
 </div>
 

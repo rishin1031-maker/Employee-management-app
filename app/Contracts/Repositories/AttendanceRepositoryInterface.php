@@ -10,8 +10,8 @@ interface AttendanceRepositoryInterface extends BaseRepositoryInterface
 {
     public function getTodayForEmployee(int $employeeId): ?Attendance;
     public function getMonthlyForEmployee(int $employeeId, int $year, int $month): Collection;
-    public function getDailyForAllEmployees(string $date): Collection;
-    public function getMonthlyReport(int $year, int $month): array;
+    public function getDailyForAllEmployees(string $date, array $filters = []): Collection;
+    public function getMonthlyReport(int $year, int $month, array $filters = []): array;
     public function markOrUpdate(int $employeeId, string $date, array $data): Attendance;
     public function checkIn(int $employeeId): Attendance;
     public function checkOut(int $employeeId): Attendance;
@@ -25,4 +25,7 @@ interface AttendanceRepositoryInterface extends BaseRepositoryInterface
     public function checkOutWithData(int $employeeId, array $data): Attendance;
     public function findAttendanceOrFail(int $id): Attendance;
     public function getRecentForEmployee(int $employeeId, int $limit = 7): Collection;
+    public function getForEmployeeBetweenDates(int $employeeId, string $from, string $to): Collection;
+    public function getActiveEmployeeCount(array $filters = []): int;
+    public function getStatusCountsBetween(string $from, string $to, array $filters = []): array;
 }

@@ -60,7 +60,7 @@ class DesignationController extends Controller
             return redirect()->route('admin.designations.index')
                 ->with('success', 'Designation deleted successfully.');
         } catch (\Exception $e) {
-            return back()->with('error', $e->getMessage());
+            return back()->with('error', $this->userFacingMessage($e));
         }
     }
 

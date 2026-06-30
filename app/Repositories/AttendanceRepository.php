@@ -33,17 +33,24 @@ class AttendanceRepository extends BaseRepository implements AttendanceRepositor
                          ->get();
     }
 
-    public function getDailyForAllEmployees(string $date): Collection
+    public function getDailyForAllEmployees(string $date, array $filters = []): Collection
     {
-        return Employee::where('status', 'active')
-                       ->with(['attendances' => fn($q) => $q->where('date', $date)->with('breaks')])
-                       ->orderBy('name')
-                       ->get();
+        return $this->filteredActiveEmployeesQuery($filters)
+            ->with([
+                'department',
+                'designation',
+                'attendances' => fn ($q) => $q->where('date', $date)->with('breaks'),
+            ])
+            ->orderBy('name')
+            ->get();
     }
 
-    public function getMonthlyReport(int $year, int $month): array
+    public function getMonthlyReport(int $year, int $month, array $filters = []): array
     {
-        $employees   = Employee::where('status', 'active')->orderBy('name')->get();
+        $employees   = $this->filteredActiveEmployeesQuery($filters)
+            ->with(['department', 'designation'])
+            ->orderBy('name')
+            ->get();
         $workingDays = \Carbon\Carbon::createFromDate($year, $month, 1)->daysInMonth;
         $report      = [];
 
@@ -53,20 +60,48 @@ class AttendanceRepository extends BaseRepository implements AttendanceRepositor
                 ->whereMonth('date', $month)
                 ->get();
 
-                $report[] = [
-                    'employee'        => $emp,
-                    'present'         => $records->where('status', 'present')->count(),
-                    'absent'          => $records->where('status', 'absent')->count(),
-                    'half_day'        => $records->where('status', 'half_day')->count(),
-                    'on_leave'        => $records->where('status', 'on_leave')->count(),
-                    'not_marked'      => $workingDays - $records->count(),
-                    'early_checkouts' => $records->filter(fn($r) =>        // ← ADD THIS
-                        $r->note && str_starts_with($r->note, 'Early checkout:')
-                    )->count(),
-                ];
+            $report[] = [
+                'employee'        => $emp,
+                'present'         => $records->where('status', 'present')->count(),
+                'absent'          => $records->where('status', 'absent')->count(),
+                'half_day'        => $records->where('status', 'half_day')->count(),
+                'on_leave'        => $records->where('status', 'on_leave')->count(),
+                'not_marked'      => $workingDays - $records->count(),
+                'early_checkouts' => $records->filter(fn ($r) =>
+                    $r->note && str_starts_with($r->note, 'Early checkout:')
+                )->count(),
+            ];
         }
 
         return $report;
+    }
+
+    private function filteredActiveEmployeesQuery(array $filters)
+    {
+        $query = Employee::where('status', 'active');
+
+        if (!empty($filters['search'])) {
+            $search = $filters['search'];
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', '%' . $search . '%')
+                  ->orWhere('email', 'like', '%' . $search . '%')
+                  ->orWhere('employee_id', 'like', '%' . $search . '%');
+            });
+        }
+
+        if (!empty($filters['department_id'])) {
+            $query->where('department_id', $filters['department_id']);
+        }
+
+        if (!empty($filters['designation_id'])) {
+            $query->where('designation_id', $filters['designation_id']);
+        }
+
+        if (!empty($filters['employee_id'])) {
+            $query->where('id', $filters['employee_id']);
+        }
+
+        return $query;
     }
 
     public function markOrUpdate(int $employeeId, string $date, array $data): Attendance
@@ -185,5 +220,41 @@ class AttendanceRepository extends BaseRepository implements AttendanceRepositor
                          ->orderByDesc('date')
                          ->take($limit)
                          ->get();
+    }
+
+    public function getForEmployeeBetweenDates(int $employeeId, string $from, string $to): Collection
+    {
+        return Attendance::where('employee_id', $employeeId)
+                         ->whereBetween('date', [$from, $to])
+                         ->with('breaks')
+                         ->orderBy('date')
+                         ->get();
+    }
+
+    public function getActiveEmployeeCount(array $filters = []): int
+    {
+        return $this->filteredActiveEmployeesQuery($filters)->count();
+    }
+
+    public function getStatusCountsBetween(string $from, string $to, array $filters = []): array
+    {
+        $employeeIds = $this->filteredActiveEmployeesQuery($filters)->pluck('id');
+
+        if ($employeeIds->isEmpty()) {
+            return ['present' => 0, 'absent' => 0, 'half_day' => 0, 'on_leave' => 0];
+        }
+
+        $counts = Attendance::whereIn('employee_id', $employeeIds)
+            ->whereBetween('date', [$from, $to])
+            ->selectRaw('status, COUNT(*) as total')
+            ->groupBy('status')
+            ->pluck('total', 'status');
+
+        return [
+            'present'  => (int) ($counts['present'] ?? 0),
+            'absent'   => (int) ($counts['absent'] ?? 0),
+            'half_day' => (int) ($counts['half_day'] ?? 0),
+            'on_leave' => (int) ($counts['on_leave'] ?? 0),
+        ];
     }
 }
