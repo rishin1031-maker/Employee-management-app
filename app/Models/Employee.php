@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Tymon\JWTAuth\Contracts\JWTSubject;
@@ -21,6 +22,7 @@ class Employee extends Authenticatable implements JWTSubject
     protected $hidden = ['password', 'remember_token'];
 
     protected $casts = [
+        'password'             => 'hashed',
         'must_change_password' => 'boolean',
         'last_login_at'        => 'datetime',
         'dob'                  => 'date',
@@ -86,6 +88,42 @@ class Employee extends Authenticatable implements JWTSubject
         return $this->image
             ? asset('storage/' . $this->image)
             : asset('images/default-avatar.png');
+    }
+
+    protected function email(): Attribute
+    {
+        return Attribute::make(
+            set: fn (?string $value) => $value !== null ? strtolower(trim($value)) : null,
+        );
+    }
+
+    protected function employeeId(): Attribute
+    {
+        return Attribute::make(
+            set: fn (?string $value) => $value !== null ? strtoupper(trim($value)) : null,
+        );
+    }
+
+    protected function name(): Attribute
+    {
+        return Attribute::make(
+            get: fn (?string $value) => $value !== null ? ucwords(strtolower($value)) : null,
+            set: fn (?string $value) => $value !== null ? strtolower(trim($value)) : null,
+        );
+    }
+
+    protected function phone(): Attribute
+    {
+        return Attribute::make(
+            set: fn (?string $value) => $value !== null ? trim($value) : null,
+        );
+    }
+
+    protected function statusLabel(): Attribute
+    {
+        return Attribute::make(
+            get: fn () => ucfirst($this->status ?? ''),
+        );
     }
 
     public function getJWTIdentifier(): mixed

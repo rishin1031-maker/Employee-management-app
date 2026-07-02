@@ -46,27 +46,33 @@
     background-color: #374151 !important;
 }
 
-.dark .text-gray-900 {
+.dark .text-gray-900,
+html.dark .text-gray-900 {
     color: #f9fafb !important;
 }
 
-.dark .text-gray-800 {
+.dark .text-gray-800,
+html.dark .text-gray-800 {
     color: #f3f4f6 !important;
 }
 
-.dark .text-gray-700 {
+.dark .text-gray-700,
+html.dark .text-gray-700 {
     color: #e5e7eb !important;
 }
 
-.dark .text-gray-600 {
+.dark .text-gray-600,
+html.dark .text-gray-600 {
     color: #d1d5db !important;
 }
 
-.dark .text-gray-500 {
+.dark .text-gray-500,
+html.dark .text-gray-500 {
     color: #9ca3af !important;
 }
 
-.dark .text-gray-400 {
+.dark .text-gray-400,
+html.dark .text-gray-400 {
     color: #9ca3af !important;
 }
 
@@ -189,4 +195,170 @@
 
 .dark .ems-login-page {
     background: linear-gradient(to bottom right, #111827, #312e81) !important;
+}
+
+/* ── Semantic text colors (light-mode shades are too dark on dark surfaces) ── */
+.dark .text-indigo-800,
+.dark .text-indigo-700 {
+    color: #c7d2fe !important;
+}
+
+.dark .text-indigo-600 {
+    color: #a5b4fc !important;
+}
+
+.dark .text-green-800,
+.dark .text-green-700 {
+    color: #86efac !important;
+}
+
+.dark .text-green-600 {
+    color: #4ade80 !important;
+}
+
+.dark .text-amber-800,
+.dark .text-amber-700 {
+    color: #fcd34d !important;
+}
+
+.dark .text-amber-600 {
+    color: #fbbf24 !important;
+}
+
+.dark .text-red-800,
+.dark .text-red-700 {
+    color: #fca5a5 !important;
+}
+
+.dark .text-red-600 {
+    color: #f87171 !important;
+}
+
+.dark .text-yellow-800,
+.dark .text-yellow-700 {
+    color: #fde047 !important;
+}
+
+.dark .text-yellow-600 {
+    color: #facc15 !important;
+}
+
+.dark .text-blue-800,
+.dark .text-blue-700 {
+    color: #93c5fd !important;
+}
+
+.dark .text-blue-600 {
+    color: #60a5fa !important;
+}
+
+.dark .text-purple-800,
+.dark .text-purple-700 {
+    color: #d8b4fe !important;
+}
+
+.dark .text-purple-600 {
+    color: #c084fc !important;
+}
+
+.dark .text-teal-800,
+.dark .text-teal-700 {
+    color: #5eead4 !important;
+}
+
+.dark .text-teal-600 {
+    color: #2dd4bf !important;
+}
+
+.dark .text-orange-600,
+.dark .text-orange-700 {
+    color: #fdba74 !important;
+}
+
+/* ── Tinted backgrounds & borders ── */
+.dark .bg-amber-50 {
+    background-color: rgb(245 158 11 / 0.12) !important;
+}
+
+.dark .bg-amber-100 {
+    background-color: rgb(245 158 11 / 0.2) !important;
+}
+
+.dark .border-amber-200 {
+    border-color: rgb(245 158 11 / 0.35) !important;
+}
+
+.dark .border-green-200 {
+    border-color: rgb(34 197 94 / 0.35) !important;
+}
+
+.dark .border-indigo-100 {
+    border-color: rgb(99 102 241 / 0.35) !important;
+}
+
+.dark .border-indigo-200 {
+    border-color: rgb(99 102 241 / 0.35) !important;
+}
+
+.dark .border-red-200 {
+    border-color: rgb(239 68 68 / 0.35) !important;
+}
+
+.dark .border-yellow-200 {
+    border-color: rgb(234 179 8 / 0.35) !important;
+}
+
+.dark .bg-white\/70 {
+    background-color: rgb(55 65 81 / 0.7) !important;
+}
+
+/* Info / callout banners */
+.dark .bg-indigo-50 {
+    color: #c7d2fe !important;
+}
+
+.dark .bg-indigo-50 strong {
+    color: #e0e7ff !important;
+}
+
+/* ── Tables ── */
+.dark main table thead th {
+    color: #94a3b8 !important;
+}
+
+.dark main table tbody td {
+    color: #e5e7eb;
+}
+
+.dark main table tbody tr:hover {
+    color: #f3f4f6;
+}
+
+/* ── Secondary buttons (e.g. Change password) ── */
+.dark .bg-gray-100.text-gray-700,
+.dark a.bg-gray-100,
+.dark button.bg-gray-100 {
+    background-color: #374151 !important;
+    color: #e5e7eb !important;
+}
+
+.dark .hover\:bg-gray-200:hover {
+    background-color: #4b5563 !important;
+}
+
+/* ── Hover tints on icon buttons ── */
+.dark .hover\:bg-indigo-50:hover {
+    background-color: rgb(99 102 241 / 0.15) !important;
+}
+
+.dark .hover\:bg-purple-50:hover {
+    background-color: rgb(168 85 247 / 0.15) !important;
+}
+
+.dark .hover\:text-indigo-600:hover {
+    color: #a5b4fc !important;
+}
+
+.dark .hover\:text-purple-600:hover {
+    color: #c084fc !important;
 }

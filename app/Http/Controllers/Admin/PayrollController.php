@@ -12,10 +12,11 @@ class PayrollController extends Controller
 
     public function index(Request $request)
     {
-        $year  = $request->get('year', now()->year);
+        $year  = (int) $request->get('year', now()->year);
+        $month = $request->get('month', now()->format('Y-m'));
         $years = range(now()->year - 3, now()->year);
-        $data  = $this->payrollService->getPayrollData($year);
+        $data  = $this->payrollService->getPayrollData($year, $month);
 
-        return view('admin.payroll.index', array_merge($data, compact('year', 'years')));
+        return view('admin.payroll.index', array_merge($data, compact('year', 'month', 'years')));
     }
 }

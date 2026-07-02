@@ -15,4 +15,13 @@
     };
 </script>
 <link rel="stylesheet" href="{{ asset('css/app.css') }}">
-<link rel="stylesheet" href="{{ asset('css/dark-mode.css') }}">
+<link id="ems-dark-mode" rel="stylesheet" href="{{ asset('css/dark-mode.css') }}">
+<script>
+    // Tailwind CDN may inject styles after parse; re-append dark overrides so they win.
+    document.addEventListener('DOMContentLoaded', function () {
+        var link = document.getElementById('ems-dark-mode');
+        if (link) {
+            document.head.appendChild(link);
+        }
+    });
+</script>

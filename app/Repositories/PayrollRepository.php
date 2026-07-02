@@ -62,4 +62,16 @@ class PayrollRepository implements PayrollRepositoryInterface
                             ->get()
                             ->groupBy(fn($h) => $h->effective_from->format('Y-m'));
     }
+
+    public function getDepartmentEarnedPayrollCost(Collection $earnedRows): Collection
+    {
+        return $earnedRows
+            ->groupBy('department')
+            ->map(fn ($rows, $department) => [
+                'name'  => $department ?: '—',
+                'total' => round($rows->sum('earned_net'), 2),
+            ])
+            ->sortByDesc('total')
+            ->values();
+    }
 }

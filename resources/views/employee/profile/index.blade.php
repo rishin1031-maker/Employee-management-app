@@ -3,6 +3,9 @@
 @section('page-title','My Profile')
 
 @section('content')
+@php
+    use App\Services\AttendanceTimeCalculator;
+@endphp
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
 
     {{-- Profile card --}}
@@ -51,6 +54,28 @@
         @if($employee->salary)
         <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-6">
             <h3 class="font-semibold text-gray-800 mb-4">Current salary</h3>
+            @if($earnedSalary)
+            <div class="mb-5 p-4 rounded-xl border {{ $earnedSalary['is_full_month'] ? 'bg-green-50 border-green-200' : 'bg-amber-50 border-amber-200' }}">
+                <div class="flex flex-wrap items-center justify-between gap-3 mb-2">
+                    <p class="text-sm font-medium text-gray-800">This month's earned pay</p>
+                    <span class="text-xs font-semibold px-2.5 py-1 rounded-full {{ $earnedSalary['is_full_month'] ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700' }}">
+                        {{ $earnedSalary['progress_percent'] }}% of full salary
+                    </span>
+                </div>
+                <p class="text-2xl font-bold text-green-700">₹ {{ number_format($earnedSalary['earned_net'], 2) }}</p>
+                <p class="text-xs text-gray-600 mt-1">
+                    {{ AttendanceTimeCalculator::formatHoursAndMinutes($earnedSalary['work_hours']) }} worked
+                    of {{ $earnedSalary['target_hours'] }}h monthly target
+                    @if(!$earnedSalary['is_full_month'])
+                        · {{ AttendanceTimeCalculator::formatHoursAndMinutes($earnedSalary['remaining_hours']) }} remaining for full pay
+                    @endif
+                </p>
+                <div class="h-2 bg-white/70 rounded-full overflow-hidden mt-3">
+                    <div class="h-full rounded-full {{ $earnedSalary['is_full_month'] ? 'bg-green-500' : 'bg-teal-500' }}"
+                         style="width: {{ $earnedSalary['progress_percent'] }}%"></div>
+                </div>
+            </div>
+            @endif
             <div class="grid grid-cols-2 gap-3 text-sm">
                 @php
                     $sal = $employee->salary;
@@ -77,8 +102,11 @@
                     <span>Gross salary</span><span>₹ {{ number_format($sal->gross_salary, 2) }}</span>
                 </div>
                 <div class="col-span-2 flex justify-between font-bold text-green-700">
-                    <span>Net salary</span><span>₹ {{ number_format($sal->net_salary, 2) }}</span>
+                    <span>Full net salary</span><span>₹ {{ number_format($sal->net_salary, 2) }}</span>
                 </div>
+                <p class="col-span-2 text-xs text-gray-500 mt-1">
+                    Full pay requires {{ AttendanceTimeCalculator::TARGET_MONTHLY_HOURS }} net work hours per month.
+                </p>
             </div>
         </div>
         @endif

@@ -22,12 +22,23 @@ class AttendanceController extends Controller
         $activeView = $request->get('view', 'daily');
         $date       = $request->get('date', today()->toDateString());
         $month      = $request->get('month', now()->format('Y-m'));
+        $year       = (int) $request->get('year', now()->year);
+        $chartView  = $request->get('chart_view', 'weekly');
         $filters    = $request->only(['search', 'department_id', 'designation_id', 'employee_id']);
 
-        $employees     = $this->attendanceService->getDailyReport($date, $filters);
+        $employees     = $activeView === 'daily'
+            ? $this->attendanceService->getDailyReport($date, $filters)
+            : collect();
         $monthlyReport = $activeView === 'monthly'
             ? $this->attendanceService->getMonthlyReport($month, $filters)
             : [];
+        $chartData     = $activeView === 'charts'
+            ? $this->attendanceService->getAdminChartData($chartView, $filters, [
+                'date'  => $date,
+                'month' => $month,
+                'year'  => $year,
+            ])
+            : null;
 
         $departments  = $this->departmentService->getActive();
         $designations = $this->designationService->getActiveWithDepartment();
@@ -37,8 +48,11 @@ class AttendanceController extends Controller
             'employees',
             'date',
             'month',
+            'year',
+            'chartView',
             'activeView',
             'monthlyReport',
+            'chartData',
             'departments',
             'designations',
             'filters',

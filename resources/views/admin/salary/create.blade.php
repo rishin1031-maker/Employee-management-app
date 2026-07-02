@@ -3,7 +3,13 @@
 @section('page-title')Manage Salary — {{ $employee->name }}@endsection
 
 @section('content')
+@php use App\Services\AttendanceTimeCalculator; @endphp
 <div class="max-w-2xl">
+    <div class="bg-indigo-50 border border-indigo-100 rounded-xl p-4 mb-5 text-sm text-indigo-800">
+        <i class="fas fa-circle-info mr-1.5"></i>
+        Set the <strong>full monthly salary</strong> here. Actual pay each month =
+        full net × (net work hours ÷ {{ AttendanceTimeCalculator::TARGET_MONTHLY_HOURS }}), capped at 100%.
+    </div>
     <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-6">
         <div class="flex items-center gap-4 mb-6 pb-4 border-b border-gray-100">
             <img src="{{ $employee->image_url }}" class="w-12 h-12 rounded-full object-cover border">

@@ -257,4 +257,19 @@ class AttendanceRepository extends BaseRepository implements AttendanceRepositor
             'on_leave' => (int) ($counts['on_leave'] ?? 0),
         ];
     }
+
+    public function getRecordsBetweenForFilteredEmployees(string $from, string $to, array $filters = []): Collection
+    {
+        $employeeIds = $this->filteredActiveEmployeesQuery($filters)->pluck('id');
+
+        if ($employeeIds->isEmpty()) {
+            return new Collection();
+        }
+
+        return Attendance::whereIn('employee_id', $employeeIds)
+            ->whereBetween('date', [$from, $to])
+            ->with('breaks')
+            ->orderBy('date')
+            ->get();
+    }
 }

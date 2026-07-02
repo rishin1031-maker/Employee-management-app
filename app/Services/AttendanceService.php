@@ -166,6 +166,8 @@ class AttendanceService
         $todayCounts = $this->attendanceRepo->getStatusCountsBetween($today, $today, $filters);
         $weekCounts  = $this->attendanceRepo->getStatusCountsBetween($weekStart, $today, $filters);
         $monthCounts = $this->attendanceRepo->getStatusCountsBetween($monthStart, $today, $filters);
+        $yearStart   = now()->startOfYear()->toDateString();
+        $yearCounts  = $this->attendanceRepo->getStatusCountsBetween($yearStart, $today, $filters);
 
         $todayMarked = array_sum($todayCounts);
 
@@ -187,7 +189,240 @@ class AttendanceService
                 'present' => $monthCounts['present'],
                 'label'   => now()->format('F Y') . ' (to date)',
             ],
+            'year' => [
+                'present' => $yearCounts['present'],
+                'label'   => now()->format('Y') . ' (to date)',
+            ],
         ];
+    }
+
+    public function getAdminChartData(string $view, array $filters = [], array $params = []): array
+    {
+        return match ($view) {
+            'daily'   => $this->buildAdminDailyChartData($filters, $params['date'] ?? today()->toDateString()),
+            'weekly'  => $this->buildAdminWeeklyChartData($filters, $params['date'] ?? today()->toDateString()),
+            'monthly' => $this->buildAdminMonthlyChartData($filters, $params['month'] ?? now()->format('Y-m')),
+            'yearly'  => $this->buildAdminYearlyChartData($filters, (int) ($params['year'] ?? now()->year)),
+            default   => $this->buildAdminWeeklyChartData($filters, today()->toDateString()),
+        };
+    }
+
+    private function buildAdminDailyChartData(array $filters, string $date): array
+    {
+        $records    = $this->attendanceRepo->getRecordsBetweenForFilteredEmployees($date, $date, $filters);
+        $aggregated = $this->aggregateOrgRecords($records);
+        $activeCount = $this->attendanceRepo->getActiveEmployeeCount($filters);
+        $marked     = array_sum($aggregated['status_counts']);
+
+        $statusBreakdown = array_merge($aggregated['status_counts'], [
+            'not_marked' => max(0, $activeCount - $marked),
+        ]);
+
+        $label = \Carbon\Carbon::parse($date)->format('D, d M Y');
+
+        return [
+            'view'              => 'daily',
+            'period_label'      => $label,
+            'labels'            => [$label],
+            'present'           => [$aggregated['status_counts']['present']],
+            'absent'            => [$aggregated['status_counts']['absent']],
+            'half_day'          => [$aggregated['status_counts']['half_day']],
+            'on_leave'          => [$aggregated['status_counts']['on_leave']],
+            'work_hours'        => [$aggregated['work_hours']],
+            'break_hours'       => [$aggregated['break_hours']],
+            'status_breakdown'  => $statusBreakdown,
+            'summary'           => $this->summarizeAdminChartSeries(
+                [[
+                    'work_hours'  => $aggregated['work_hours'],
+                    'break_hours' => $aggregated['break_hours'],
+                    'present'     => $aggregated['status_counts']['present'],
+                ]],
+                'daily'
+            ),
+            'has_data'          => $records->isNotEmpty() || $marked > 0,
+        ];
+    }
+
+    private function buildAdminWeeklyChartData(array $filters, string $anchorDate): array
+    {
+        $start   = \Carbon\Carbon::parse($anchorDate)->startOfWeek(\Carbon\Carbon::MONDAY);
+        $end     = $start->copy()->endOfWeek(\Carbon\Carbon::SUNDAY);
+        $records = $this->attendanceRepo->getRecordsBetweenForFilteredEmployees(
+            $start->toDateString(),
+            $end->toDateString(),
+            $filters
+        )->groupBy(fn ($a) => $a->date->toDateString());
+
+        return $this->buildAdminPeriodChartData('weekly', $start, $end, $records, 'day', $filters);
+    }
+
+    private function buildAdminMonthlyChartData(array $filters, string $month): array
+    {
+        $start   = \Carbon\Carbon::createFromFormat('Y-m', $month)->startOfMonth();
+        $end     = $start->copy()->endOfMonth();
+        $records = $this->attendanceRepo->getRecordsBetweenForFilteredEmployees(
+            $start->toDateString(),
+            $end->toDateString(),
+            $filters
+        )->groupBy(fn ($a) => $a->date->toDateString());
+
+        return $this->buildAdminPeriodChartData('monthly', $start, $end, $records, 'day', $filters);
+    }
+
+    private function buildAdminYearlyChartData(array $filters, int $year): array
+    {
+        $start = \Carbon\Carbon::createFromDate($year, 1, 1)->startOfYear();
+        $end   = $year === (int) now()->year
+            ? today()
+            : \Carbon\Carbon::createFromDate($year, 12, 31);
+
+        $byMonth = $this->attendanceRepo->getRecordsBetweenForFilteredEmployees(
+            $start->toDateString(),
+            $end->toDateString(),
+            $filters
+        )->groupBy(fn ($a) => $a->date->format('Y-m'));
+
+        $labels     = [];
+        $present    = [];
+        $absent     = [];
+        $halfDay    = [];
+        $onLeave    = [];
+        $workHours  = [];
+        $breakHours = [];
+        $series     = [];
+
+        for ($month = 1; $month <= 12; $month++) {
+            $monthKey   = sprintf('%04d-%02d', $year, $month);
+            $monthStart = \Carbon\Carbon::createFromDate($year, $month, 1);
+
+            if ($monthStart->gt($end)) {
+                break;
+            }
+
+            $agg = $this->aggregateOrgRecords($byMonth->get($monthKey, collect()));
+
+            $labels[]     = $monthStart->format('M');
+            $present[]    = $agg['status_counts']['present'];
+            $absent[]     = $agg['status_counts']['absent'];
+            $halfDay[]    = $agg['status_counts']['half_day'];
+            $onLeave[]    = $agg['status_counts']['on_leave'];
+            $workHours[]  = $agg['work_hours'];
+            $breakHours[] = $agg['break_hours'];
+            $series[]     = [
+                'work_hours'  => $agg['work_hours'],
+                'break_hours' => $agg['break_hours'],
+                'present'     => $agg['status_counts']['present'],
+            ];
+        }
+
+        return [
+            'view'         => 'yearly',
+            'period_label' => (string) $year,
+            'labels'       => $labels,
+            'present'      => $present,
+            'absent'       => $absent,
+            'half_day'     => $halfDay,
+            'on_leave'     => $onLeave,
+            'work_hours'   => $workHours,
+            'break_hours'  => $breakHours,
+            'summary'      => $this->summarizeAdminChartSeries($series, 'yearly'),
+            'has_data'     => collect($series)->sum('present') > 0 || collect($series)->sum('work_hours') > 0,
+        ];
+    }
+
+    private function buildAdminPeriodChartData(
+        string $view,
+        \Carbon\Carbon $start,
+        \Carbon\Carbon $end,
+        \Illuminate\Support\Collection $groupedRecords,
+        string $step,
+        array $filters
+    ): array {
+        $labels     = [];
+        $present    = [];
+        $absent     = [];
+        $halfDay    = [];
+        $onLeave    = [];
+        $workHours  = [];
+        $breakHours = [];
+        $series     = [];
+
+        for ($day = $start->copy(); $day->lte($end); $day->addDay()) {
+            $key     = $day->toDateString();
+            $dayRecs = $groupedRecords->get($key, collect());
+            $agg     = $this->aggregateOrgRecords($dayRecs);
+
+            $labels[]     = $view === 'monthly' ? $day->format('d') : $day->format('D, d M');
+            $present[]    = $agg['status_counts']['present'];
+            $absent[]     = $agg['status_counts']['absent'];
+            $halfDay[]    = $agg['status_counts']['half_day'];
+            $onLeave[]    = $agg['status_counts']['on_leave'];
+            $workHours[]  = $agg['work_hours'];
+            $breakHours[] = $agg['break_hours'];
+            $series[]     = [
+                'work_hours'  => $agg['work_hours'],
+                'break_hours' => $agg['break_hours'],
+                'present'     => $agg['status_counts']['present'],
+            ];
+        }
+
+        return [
+            'view'         => $view,
+            'period_label' => $view === 'monthly'
+                ? $start->format('F Y')
+                : $start->format('d M') . ' – ' . $end->format('d M Y'),
+            'week_start'   => $view === 'weekly' ? $start->toDateString() : null,
+            'labels'       => $labels,
+            'present'      => $present,
+            'absent'       => $absent,
+            'half_day'     => $halfDay,
+            'on_leave'     => $onLeave,
+            'work_hours'   => $workHours,
+            'break_hours'  => $breakHours,
+            'summary'      => $this->summarizeAdminChartSeries($series, $view),
+            'has_data'     => collect($series)->sum('present') > 0 || collect($series)->sum('work_hours') > 0,
+        ];
+    }
+
+    private function aggregateOrgRecords(\Illuminate\Support\Collection $records): array
+    {
+        $statusCounts = ['present' => 0, 'absent' => 0, 'half_day' => 0, 'on_leave' => 0];
+        $workHours    = 0;
+        $breakHours   = 0;
+
+        foreach ($records as $attendance) {
+            $status = $attendance->status;
+            if (isset($statusCounts[$status])) {
+                $statusCounts[$status]++;
+            }
+
+            $metrics    = $this->metricsForAttendance($attendance);
+            $workHours  += $metrics['work_hours'];
+            $breakHours += $metrics['break_hours'];
+        }
+
+        return [
+            'status_counts' => $statusCounts,
+            'work_hours'    => round($workHours, 2),
+            'break_hours'   => round($breakHours, 2),
+        ];
+    }
+
+    private function summarizeAdminChartSeries(array $series, string $view): array
+    {
+        $base = $this->summarizeChartSeries(
+            array_map(fn ($row) => [
+                'work_hours'   => $row['work_hours'],
+                'break_hours'  => $row['break_hours'],
+                'work_minutes' => AttendanceTimeCalculator::hoursToMinutes($row['work_hours']),
+                'break_minutes'=> AttendanceTimeCalculator::hoursToMinutes($row['break_hours']),
+            ], $series),
+            $view
+        );
+
+        $base['total_present'] = (int) collect($series)->sum('present');
+
+        return $base;
     }
 
     public function getTodayForEmployee(int $employeeId): ?Attendance

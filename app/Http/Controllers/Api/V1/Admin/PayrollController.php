@@ -13,11 +13,12 @@ class PayrollController extends ApiController
 
     public function index(Request $request): JsonResponse
     {
-        $year = (int) $request->get('year', now()->year);
+        $year  = (int) $request->get('year', now()->year);
+        $month = $request->get('month', now()->format('Y-m'));
 
         return $this->success(array_merge(
-            ['year' => $year],
-            $this->payrollService->getPayrollData($year)
+            ['year' => $year, 'month' => $month],
+            $this->payrollService->getPayrollData($year, $month)
         ));
     }
 }

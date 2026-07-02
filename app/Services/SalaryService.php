@@ -11,7 +11,8 @@ use Illuminate\Pagination\LengthAwarePaginator;
 class SalaryService
 {
     public function __construct(
-        private SalaryRepositoryInterface $salaryRepo
+        private SalaryRepositoryInterface $salaryRepo,
+        private SalaryCalculator $salaryCalculator,
     ) {}
 
     public function getEmployeesWithSalary(array $filters): LengthAwarePaginator
@@ -24,27 +25,100 @@ class SalaryService
         return $this->salaryRepo->getCurrentSalary($employeeId);
     }
 
+    public function getEarnedSalaryForEmployee(Employee $employee, string $month): ?array
+    {
+        $salary = $employee->relationLoaded('salary')
+            ? $employee->salary
+            : $this->getCurrentSalary($employee->id);
+
+        if (!$salary) {
+            return null;
+        }
+
+        $workHours = $this->salaryCalculator->getMonthlyWorkHoursForEmployee($employee->id, $month);
+
+        return $this->salaryCalculator->calculateFromWorkHours($salary, $workHours);
+    }
+
+    public function getEarnedPayrollForMonth(string $month): array
+    {
+        $employees = $this->salaryRepo->getActiveEmployeesWithSalary();
+        $rows      = [];
+        $totalNet  = 0;
+
+        foreach ($employees as $employee) {
+            $earned = $this->getEarnedSalaryForEmployee($employee, $month);
+            if (!$earned) {
+                continue;
+            }
+
+            $rows[] = array_merge($earned, [
+                'employee_id' => $employee->id,
+                'name'        => $employee->name,
+                'emp_code'    => $employee->employee_id,
+                'department'  => $employee->department?->name ?? '—',
+            ]);
+
+            $totalNet += $earned['earned_net'];
+        }
+
+        return [
+            'employees'        => collect($rows)->sortByDesc('earned_net')->values(),
+            'total_earned_net' => round($totalNet, 2),
+        ];
+    }
+
+    public function getYearlyEarnedTotals(int $year): array
+    {
+        $totals = [];
+
+        for ($month = 1; $month <= 12; $month++) {
+            $monthKey = sprintf('%04d-%02d', $year, $month);
+
+            if ($monthKey > now()->format('Y-m')) {
+                $totals[] = 0;
+                continue;
+            }
+
+            $totals[] = $this->getEarnedPayrollForMonth($monthKey)['total_earned_net'];
+        }
+
+        return $totals;
+    }
+
     public function updateSalary(Employee $employee, array $data): Salary
     {
-        // Fill nullable fields with 0
-        $fields = ['hra','transport','medical','pf_deduction','tax_deduction','other_allowance','other_deduction'];
+        $fields = [
+            'hra',
+            'transport',
+            'medical',
+            'pf_deduction',
+            'tax_deduction',
+            'other_allowance',
+            'other_deduction',
+        ];
+
         foreach ($fields as $field) {
             $data[$field] = $data[$field] ?? 0;
         }
 
         $salary = $this->salaryRepo->upsertSalary($employee->id, $data);
 
-        // Compute gross/net
-        $gross = $data['basic'] + $data['hra'] + $data['transport'] + $data['medical'] + $data['other_allowance'];
-        $net   = $gross - $data['pf_deduction'] - $data['tax_deduction'] - $data['other_deduction'];
+        $gross = $data['basic']
+            + $data['hra']
+            + $data['transport']
+            + $data['medical']
+            + $data['other_allowance'];
+        $net = $gross
+            - $data['pf_deduction']
+            - $data['tax_deduction']
+            - $data['other_deduction'];
 
-        // Record history
         $this->salaryRepo->recordHistory($employee->id, $salary->id, array_merge($data, [
             'gross_salary' => $gross,
             'net_salary'   => $net,
         ]));
 
-        // Notify employee
         SendSalaryUpdatedJob::dispatch($employee, $salary->fresh());
 
         return $salary;
@@ -67,7 +141,7 @@ class SalaryService
     {
         return [
             'current' => $this->getCurrentSalary($employee->id),
-            'history' => $this->getHistory($employee)->take(5),
+            'history' => $this->getHistory($employee)->getCollection()->take(5),
         ];
     }
 }

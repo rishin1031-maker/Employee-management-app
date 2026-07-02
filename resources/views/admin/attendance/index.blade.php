@@ -8,7 +8,7 @@
 @endphp
 
 {{-- Attendance statistics --}}
-<div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-5">
+<div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-5">
     <div class="ems-stat-card p-5">
         <div class="flex items-start justify-between gap-3">
             <div>
@@ -71,6 +71,22 @@
             Total present records from the 1st of the month through today{{ request()->hasAny(['search', 'department_id', 'designation_id', 'employee_id']) ? ' (filtered)' : '' }}.
         </p>
     </div>
+
+    <div class="ems-stat-card p-5">
+        <div class="flex items-start justify-between gap-3">
+            <div>
+                <p class="text-xs font-medium text-gray-500 uppercase tracking-wide">Present This Year</p>
+                <p class="text-3xl font-bold text-amber-600 mt-1">{{ $statistics['year']['present'] }}</p>
+                <p class="text-xs text-gray-400 mt-1">{{ $statistics['year']['label'] }}</p>
+            </div>
+            <div class="w-11 h-11 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center flex-shrink-0">
+                <i class="fas fa-calendar text-lg"></i>
+            </div>
+        </div>
+        <p class="mt-4 pt-4 border-t border-gray-100 text-xs text-gray-500">
+            Total present records from January through today{{ request()->hasAny(['search', 'department_id', 'designation_id', 'employee_id']) ? ' (filtered)' : '' }}.
+        </p>
+    </div>
 </div>
 
 {{-- Tabs --}}
@@ -83,9 +99,17 @@
        class="ems-tab {{ $activeView === 'monthly' ? 'is-active' : '' }}">
         <i class="fas fa-calendar mr-1.5 text-xs"></i> Monthly Report
     </a>
+    <a href="{{ route('admin.attendance.index', array_merge($filterParams, ['view' => 'charts', 'chart_view' => $chartView ?? 'weekly', 'date' => $date, 'month' => $month, 'year' => $year ?? now()->year])) }}"
+       class="ems-tab {{ $activeView === 'charts' ? 'is-active' : '' }}">
+        <i class="fas fa-chart-line mr-1.5 text-xs"></i> Analytics
+    </a>
 </div>
 
-@if($activeView === 'daily')
+@if($activeView === 'charts')
+
+@include('admin.attendance.partials.charts')
+
+@elseif($activeView === 'daily')
 
 {{-- ============================================================ --}}
 {{-- DAILY VIEW --}}

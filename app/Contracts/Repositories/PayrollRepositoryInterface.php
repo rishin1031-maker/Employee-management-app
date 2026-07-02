@@ -10,4 +10,5 @@ interface PayrollRepositoryInterface
     public function getEmployeeSalaryComparison(): Collection;
     public function getDepartmentPayrollCost(): Collection;
     public function getMonthlyChangeLog(int $year): Collection;
+    public function getDepartmentEarnedPayrollCost(Collection $earnedRows): Collection;
 }

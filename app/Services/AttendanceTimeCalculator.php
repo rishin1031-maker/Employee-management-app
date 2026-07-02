@@ -12,6 +12,7 @@ class AttendanceTimeCalculator
     public const TARGET_DAILY_HOURS   = 8;
     public const TARGET_WEEKLY_HOURS  = 48;
     public const TARGET_MONTHLY_HOURS = 200;
+    public const TARGET_YEARLY_HOURS  = 2400;
 
     public const TARGET_SECONDS = self::TARGET_DAILY_HOURS * 3600;
 
@@ -20,6 +21,7 @@ class AttendanceTimeCalculator
         return match ($view) {
             'weekly'  => self::TARGET_WEEKLY_HOURS,
             'monthly' => self::TARGET_MONTHLY_HOURS,
+            'yearly'  => self::TARGET_YEARLY_HOURS,
             default   => self::TARGET_DAILY_HOURS,
         };
     }

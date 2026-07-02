@@ -8,7 +8,6 @@ use App\Jobs\SendWelcomeEmailJob;
 use App\Models\Employee;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Pagination\LengthAwarePaginator;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 
 class EmployeeService
@@ -31,7 +30,7 @@ class EmployeeService
 
         $plainPassword         = 'password123';
         $data['employee_id']   = $this->employeeRepo->generateEmployeeId();
-        $data['password']      = Hash::make($plainPassword);
+        $data['password']      = $plainPassword;
         $data['must_change_password'] = true;
 
         $employee = $this->employeeRepo->create($data);
@@ -73,7 +72,7 @@ class EmployeeService
     public function resetPassword(int $id, string $newPassword): Employee
     {
         return $this->employeeRepo->update($id, [
-            'password'             => Hash::make($newPassword),
+            'password'             => $newPassword,
             'must_change_password' => true,
         ]);
     }
@@ -81,7 +80,7 @@ class EmployeeService
     public function changePassword(Employee $employee, string $newPassword): Employee
     {
         return $this->employeeRepo->update($employee->id, [
-            'password'             => Hash::make($newPassword),
+            'password'             => $newPassword,
             'must_change_password' => false,
         ]);
     }

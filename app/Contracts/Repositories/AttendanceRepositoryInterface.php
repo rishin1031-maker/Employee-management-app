@@ -28,4 +28,5 @@ interface AttendanceRepositoryInterface extends BaseRepositoryInterface
     public function getForEmployeeBetweenDates(int $employeeId, string $from, string $to): Collection;
     public function getActiveEmployeeCount(array $filters = []): int;
     public function getStatusCountsBetween(string $from, string $to, array $filters = []): array;
+    public function getRecordsBetweenForFilteredEmployees(string $from, string $to, array $filters = []): Collection;
 }

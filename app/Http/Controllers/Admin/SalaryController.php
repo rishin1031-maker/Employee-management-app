@@ -15,10 +15,17 @@ class SalaryController extends Controller
         private EmployeeService $employeeService,
     ) {}
 
-    public function index()
+    public function index(Request $request)
     {
-        $employees = $this->salaryService->getEmployeesWithSalary(request()->all());
-        return view('admin.salary.index', compact('employees'));
+        $month     = $request->get('month', now()->format('Y-m'));
+        $employees = $this->salaryService->getEmployeesWithSalary($request->all());
+
+        $earnedByEmployee = $employees->getCollection()->mapWithKeys(function ($emp) use ($month) {
+            $earned = $this->salaryService->getEarnedSalaryForEmployee($emp, $month);
+            return [$emp->id => $earned];
+        });
+
+        return view('admin.salary.index', compact('employees', 'month', 'earnedByEmployee'));
     }
 
     public function create(Employee $employee)

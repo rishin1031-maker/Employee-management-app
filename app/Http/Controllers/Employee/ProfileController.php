@@ -4,12 +4,16 @@ namespace App\Http\Controllers\Employee;
 
 use App\Http\Controllers\Controller;
 use App\Services\EmployeeService;
+use App\Services\SalaryService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class ProfileController extends Controller
 {
-    public function __construct(private EmployeeService $employeeService) {}
+    public function __construct(
+        private EmployeeService $employeeService,
+        private SalaryService $salaryService,
+    ) {}
 
     public function index()
     {
@@ -17,7 +21,12 @@ class ProfileController extends Controller
             Auth::guard('employee')->id()
         );
 
-        return view('employee.profile.index', compact('employee'));
+        $earnedSalary = $this->salaryService->getEarnedSalaryForEmployee(
+            $employee,
+            now()->format('Y-m')
+        );
+
+        return view('employee.profile.index', compact('employee', 'earnedSalary'));
     }
 
     public function updatePhone(Request $request)

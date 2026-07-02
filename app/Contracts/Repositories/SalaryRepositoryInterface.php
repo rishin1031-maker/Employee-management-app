@@ -14,4 +14,5 @@ interface SalaryRepositoryInterface extends BaseRepositoryInterface
     public function upsertSalary(int $employeeId, array $data): Salary;
     public function getHistoryForEmployee(int $employeeId, int $perPage = 10): LengthAwarePaginator;
     public function recordHistory(int $employeeId, int $salaryId, array $data): void;
+    public function getActiveEmployeesWithSalary(): Collection;
 }

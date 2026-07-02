@@ -7,6 +7,7 @@ use App\Models\Employee;
 use App\Models\Salary;
 use App\Models\SalaryHistory;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Database\Eloquent\Collection;
 
 class SalaryRepository extends BaseRepository implements SalaryRepositoryInterface
 {
@@ -55,5 +56,14 @@ class SalaryRepository extends BaseRepository implements SalaryRepositoryInterfa
             'employee_id' => $employeeId,
             'salary_id'   => $salaryId,
         ]));
+    }
+
+    public function getActiveEmployeesWithSalary(): Collection
+    {
+        return Employee::with(['salary', 'department'])
+            ->where('status', 'active')
+            ->whereHas('salary')
+            ->orderBy('name')
+            ->get();
     }
 }
