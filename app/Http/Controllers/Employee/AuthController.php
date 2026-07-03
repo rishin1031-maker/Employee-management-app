@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Employee;
 
 use App\Http\Controllers\Controller;
+use App\Services\ActivityLogService;
 use App\Services\AuthService;
 use App\Services\EmployeeService;
 use Illuminate\Http\Request;
@@ -13,6 +14,7 @@ class AuthController extends Controller
     public function __construct(
         private EmployeeService $employeeService,
         private AuthService $authService,
+        private ActivityLogService $activityLog,
     ) {}
 
     public function showChangePassword()
@@ -41,6 +43,10 @@ class AuthController extends Controller
 
     public function logout(Request $request)
     {
+        if ($employee = Auth::guard('employee')->user()) {
+            $this->activityLog->logAuth('logout', $employee, 'employee');
+        }
+
         Auth::guard('employee')->logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();

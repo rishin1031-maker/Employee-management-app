@@ -160,5 +160,7 @@
     </main>
 </x-layout-with-sidebar>
 
+@stack('scripts')
+
 </body>
 </html>

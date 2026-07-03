@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Contracts\Repositories\EmployeeRepositoryInterface;
 use App\Models\Employee;
+use App\Services\ActivityLogService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 
@@ -11,12 +12,15 @@ class AuthService
 {
     public function __construct(
         private EmployeeRepositoryInterface $employeeRepo,
+        private ActivityLogService $activityLog,
     ) {}
 
     public function resolveWebLoginGuard(string $login, string $password, bool $remember): ?string
     {
         if (filter_var($login, FILTER_VALIDATE_EMAIL)) {
             if (Auth::guard('admin')->attempt(['email' => $login, 'password' => $password], $remember)) {
+                $this->activityLog->logAuth('login', Auth::guard('admin')->user(), 'admin');
+
                 return 'admin';
             }
         }
@@ -30,6 +34,7 @@ class AuthService
                 $remember
             )) {
                 $this->employeeRepo->updateLastLoginAt($employee->id);
+                $this->activityLog->logAuth('login', Auth::guard('employee')->user(), 'employee');
 
                 return 'employee';
             }
@@ -54,6 +59,7 @@ class AuthService
     public function recordEmployeeLogin(Employee $employee): void
     {
         $this->employeeRepo->updateLastLoginAt($employee->id);
+        $this->activityLog->logAuth('login', $employee, 'api_employee');
     }
 
     public function verifyEmployeePassword(Employee $employee, string $password): bool

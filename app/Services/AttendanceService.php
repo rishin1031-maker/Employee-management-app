@@ -477,6 +477,50 @@ class AttendanceService
         ];
     }
 
+    public function getAdminLiveWorking(string $date, array $filters = []): array
+    {
+        $isToday = $date === today()->toDateString();
+
+        if (!$isToday) {
+            return [
+                'is_today'    => false,
+                'server_time' => now()->timestamp,
+                'count'       => 0,
+                'employees'   => [],
+            ];
+        }
+
+        $employees = $this->attendanceRepo->getDailyForAllEmployees($date, $filters);
+        $working   = [];
+
+        foreach ($employees as $employee) {
+            $attendance = $employee->attendances->first();
+
+            if (!$attendance?->check_in || $attendance->check_out) {
+                continue;
+            }
+
+            $stats = $this->getLiveStats($attendance);
+
+            $working[] = [
+                'employee_id'   => $employee->id,
+                'name'          => $employee->name,
+                'employee_code' => $employee->employee_id,
+                'department'    => $employee->department?->name,
+                'designation'   => $employee->designation?->name,
+                'check_in_time' => $attendance->check_in->format('h:i A'),
+                ...$this->buildLivePayload($attendance, $stats),
+            ];
+        }
+
+        return [
+            'is_today'    => true,
+            'server_time' => now()->timestamp,
+            'count'       => count($working),
+            'employees'   => $working,
+        ];
+    }
+
     public function getWorkHoursChartData(int $employeeId, string $view, array $params = []): array
     {
         return match ($view) {

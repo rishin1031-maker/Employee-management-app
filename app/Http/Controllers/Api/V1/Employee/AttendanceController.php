@@ -27,6 +27,26 @@ class AttendanceController extends ApiController
         ]);
     }
 
+    public function charts(Request $request): JsonResponse
+    {
+        $view = $request->get('view', 'weekly');
+
+        if (!in_array($view, ['daily', 'weekly', 'monthly'], true)) {
+            $view = 'weekly';
+        }
+
+        $chartData = $this->attendanceService->getWorkHoursChartData(
+            Auth::guard('api_employee')->id(),
+            $view,
+            [
+                'date'  => $request->get('date', today()->toDateString()),
+                'month' => $request->get('month', now()->format('Y-m')),
+            ]
+        );
+
+        return $this->success($chartData);
+    }
+
     public function checkIn(): JsonResponse
     {
         try {

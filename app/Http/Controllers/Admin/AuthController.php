@@ -3,13 +3,17 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Services\ActivityLogService;
 use App\Services\AuthService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class AuthController extends Controller
 {
-    public function __construct(private AuthService $authService) {}
+    public function __construct(
+        private AuthService $authService,
+        private ActivityLogService $activityLog,
+    ) {}
 
     public function showLogin()
     {
@@ -54,6 +58,14 @@ class AuthController extends Controller
 
     public function logout(Request $request)
     {
+        if ($admin = Auth::guard('admin')->user()) {
+            $this->activityLog->logAuth('logout', $admin, 'admin');
+        }
+
+        if ($employee = Auth::guard('employee')->user()) {
+            $this->activityLog->logAuth('logout', $employee, 'employee');
+        }
+
         Auth::guard('admin')->logout();
         Auth::guard('employee')->logout();
         $request->session()->invalidate();

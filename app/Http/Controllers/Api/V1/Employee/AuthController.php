@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\V1\Employee;
 use App\Http\Controllers\Api\ApiController;
 use App\Http\Controllers\Api\Support\ApiTransformer;
 use App\Models\Employee;
+use App\Services\ActivityLogService;
 use App\Services\AuthService;
 use App\Services\EmployeeService;
 use Illuminate\Http\JsonResponse;
@@ -16,6 +17,7 @@ class AuthController extends ApiController
     public function __construct(
         private EmployeeService $employeeService,
         private AuthService $authService,
+        private ActivityLogService $activityLog,
     ) {}
 
     public function login(Request $request): JsonResponse
@@ -80,6 +82,10 @@ class AuthController extends ApiController
 
     public function logout(): JsonResponse
     {
+        if ($employee = auth('api_employee')->user()) {
+            $this->activityLog->logAuth('logout', $employee, 'api_employee');
+        }
+
         auth('api_employee')->logout();
 
         return $this->success(null, 'Logged out successfully.');

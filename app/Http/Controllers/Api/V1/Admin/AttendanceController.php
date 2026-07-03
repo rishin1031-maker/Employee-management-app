@@ -40,6 +40,42 @@ class AttendanceController extends ApiController
         return $this->success(['month' => $month, 'report' => $report]);
     }
 
+    public function statistics(Request $request): JsonResponse
+    {
+        $filters = $request->only(['search', 'department_id', 'designation_id', 'employee_id']);
+
+        return $this->success($this->attendanceService->getAdminStatistics($filters));
+    }
+
+    public function charts(Request $request): JsonResponse
+    {
+        $chartView = $request->get('chart_view', 'weekly');
+
+        if (!in_array($chartView, ['daily', 'weekly', 'monthly', 'yearly'], true)) {
+            $chartView = 'weekly';
+        }
+
+        $filters = $request->only(['search', 'department_id', 'designation_id', 'employee_id']);
+
+        return $this->success(
+            $this->attendanceService->getAdminChartData($chartView, $filters, [
+                'date'  => $request->get('date', today()->toDateString()),
+                'month' => $request->get('month', now()->format('Y-m')),
+                'year'  => (int) $request->get('year', now()->year),
+            ])
+        );
+    }
+
+    public function liveStatus(Request $request): JsonResponse
+    {
+        $date    = $request->get('date', today()->toDateString());
+        $filters = $request->only(['search', 'department_id', 'designation_id', 'employee_id']);
+
+        return $this->success(
+            $this->attendanceService->getAdminLiveWorking($date, $filters)
+        );
+    }
+
     public function mark(Request $request): JsonResponse
     {
         $data = $request->validate([

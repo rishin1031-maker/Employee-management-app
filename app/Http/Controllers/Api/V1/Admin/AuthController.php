@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\V1\Admin;
 
 use App\Http\Controllers\Api\ApiController;
 use App\Http\Controllers\Api\Support\ApiTransformer;
+use App\Services\ActivityLogService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -11,6 +12,10 @@ use Illuminate\Support\Facades\Validator;
 
 class AuthController extends ApiController
 {
+    public function __construct(
+        private ActivityLogService $activityLog,
+    ) {}
+
     public function login(Request $request): JsonResponse
     {
         $validator = Validator::make($request->all(), [
@@ -25,6 +30,8 @@ class AuthController extends ApiController
         if (!$token = auth('api_admin')->attempt($validator->validated())) {
             return $this->error('Invalid credentials.', 401);
         }
+
+        $this->activityLog->logAuth('login', auth('api_admin')->user(), 'api_admin');
 
         return $this->success(
             ApiTransformer::tokenResponse(
@@ -59,6 +66,10 @@ class AuthController extends ApiController
 
     public function logout(): JsonResponse
     {
+        if ($admin = auth('api_admin')->user()) {
+            $this->activityLog->logAuth('logout', $admin, 'api_admin');
+        }
+
         auth('api_admin')->logout();
 
         return $this->success(null, 'Logged out successfully.');

@@ -114,6 +114,7 @@
 {{-- ============================================================ --}}
 {{-- DAILY VIEW --}}
 {{-- ============================================================ --}}
+@php $isToday = $date === today()->toDateString(); @endphp
 
 <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-4 mb-5">
     <form method="GET" class="flex flex-wrap gap-3 items-end">
@@ -161,6 +162,50 @@
            class="text-sm text-gray-500 hover:text-gray-700 py-2">Clear</a>
     </form>
 </div>
+
+@if($isToday)
+<div class="bg-white rounded-xl border border-indigo-100 shadow-sm p-5 mb-5" id="live-working-panel">
+    <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+        <h3 class="font-semibold text-gray-800 text-sm flex items-center gap-2">
+            <span class="relative flex h-2.5 w-2.5">
+                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-500"></span>
+            </span>
+            Currently working
+            <span id="live-working-count" class="text-indigo-600 font-bold">({{ $liveWorking['count'] ?? 0 }})</span>
+        </h3>
+        <span class="text-xs text-gray-400">Live net work time · refreshes every 30s</span>
+    </div>
+    <div id="live-working-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+        @forelse($liveWorking['employees'] ?? [] as $worker)
+        <div class="rounded-xl border border-gray-100 bg-gray-50 p-4"
+             data-live-card
+             data-employee-id="{{ $worker['employee_id'] }}">
+            <div class="flex items-start justify-between gap-2 mb-2">
+                <div class="min-w-0">
+                    <p class="font-medium text-gray-900 truncate">{{ $worker['name'] }}</p>
+                    <p class="text-xs text-gray-500 truncate">{{ $worker['employee_code'] }}</p>
+                </div>
+                <span class="text-xs text-gray-400 flex-shrink-0">{{ $worker['check_in_time'] }}</span>
+            </div>
+            <p class="text-2xl font-bold font-mono text-indigo-600 live-work-timer"
+               data-employee-id="{{ $worker['employee_id'] }}">00:00:00</p>
+            <div class="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs text-gray-500">
+                <span>Break: <span class="live-break-timer font-medium text-orange-500" data-employee-id="{{ $worker['employee_id'] }}">00:00:00</span></span>
+                <span class="live-status-label" data-employee-id="{{ $worker['employee_id'] }}">Working</span>
+            </div>
+            @if($worker['department'] ?? false)
+            <p class="text-xs text-gray-400 mt-2 truncate">{{ $worker['department'] }}</p>
+            @endif
+        </div>
+        @empty
+        <p id="live-working-empty" class="text-sm text-gray-400 col-span-full py-4 text-center">
+            No employees are checked in right now.
+        </p>
+        @endforelse
+    </div>
+</div>
+@endif
 
 <div class="bg-white rounded-xl border border-gray-100 shadow-sm">
     <div class="px-6 py-4 border-b border-gray-100">
@@ -241,6 +286,24 @@
                                         </div>
                                     @endif
 
+                                @elseif($isToday && $att->check_in && !$att->check_out)
+                                    <div class="live-row-stats space-y-1" data-employee-id="{{ $emp->id }}">
+                                        <p class="text-xl font-bold font-mono text-indigo-600 live-work-timer"
+                                           data-employee-id="{{ $emp->id }}">00:00:00</p>
+                                        <p class="text-gray-500">
+                                            Break:
+                                            <span class="font-medium text-orange-500 live-break-timer"
+                                                  data-employee-id="{{ $emp->id }}">00:00:00</span>
+                                        </p>
+                                        <p class="live-status-label text-blue-600 font-medium"
+                                           data-employee-id="{{ $emp->id }}">
+                                            <i class="fas fa-circle animate-pulse text-xs"></i> Working
+                                        </p>
+                                        <p class="text-gray-400">
+                                            Target: {{ \App\Services\AttendanceTimeCalculator::TARGET_DAILY_HOURS }}h
+                                            · <span class="live-progress-label" data-employee-id="{{ $emp->id }}">0%</span>
+                                        </p>
+                                    </div>
                                 @else
                                     <p class="text-blue-500 font-medium">
                                         <i class="fas fa-circle animate-pulse text-xs"></i> Currently working
@@ -361,6 +424,193 @@
         </table>
     </div>
 </div>
+
+@if($isToday)
+@push('scripts')
+<script>
+(function () {
+    const LIVE_URL = @json(route('admin.attendance.live-status'));
+    const TARGET_SECONDS = {{ \App\Services\AttendanceTimeCalculator::TARGET_SECONDS }};
+    const FILTER_QUERY = @json(http_build_query(array_merge($filterParams, ['date' => $date])));
+
+    let polledAt = @json($liveWorking['server_time'] ?? now()->timestamp);
+    const workers = {};
+
+    (@json($liveWorking['employees'] ?? [])).forEach(function (w) {
+        workers[w.employee_id] = {
+            net_seconds: w.net_seconds ?? 0,
+            total_break_seconds: w.total_break_seconds ?? 0,
+            on_break: !!w.on_break,
+            is_complete: !!w.is_complete,
+            progress_percent: w.progress_percent ?? 0,
+            check_in_time: w.check_in_time,
+            name: w.name,
+            employee_code: w.employee_code,
+            department: w.department,
+        };
+    });
+
+    function formatSeconds(totalSecs) {
+        totalSecs = Math.max(0, Math.floor(totalSecs));
+        const h = Math.floor(totalSecs / 3600);
+        const m = Math.floor((totalSecs % 3600) / 60);
+        const s = totalSecs % 60;
+        return String(h).padStart(2, '0') + ':' +
+               String(m).padStart(2, '0') + ':' +
+               String(s).padStart(2, '0');
+    }
+
+    function secondsSincePoll() {
+        return Math.max(0, Math.floor(Date.now() / 1000 - polledAt));
+    }
+
+    function displayNetSecs(state, elapsed) {
+        return state.on_break ? state.net_seconds : state.net_seconds + elapsed;
+    }
+
+    function displayBreakSecs(state, elapsed) {
+        return state.on_break ? state.total_break_seconds + elapsed : state.total_break_seconds;
+    }
+
+    function updateDom() {
+        const elapsed = secondsSincePoll();
+
+        document.querySelectorAll('.live-work-timer[data-employee-id]').forEach(function (el) {
+            const id = el.dataset.employeeId;
+            const state = workers[id];
+            if (!state) return;
+
+            const net = displayNetSecs(state, elapsed);
+            el.textContent = formatSeconds(net);
+            el.className = 'text-xl font-bold font-mono ' +
+                (state.on_break ? 'text-orange-400 live-work-timer' : 'text-indigo-600 live-work-timer');
+            if (el.closest('[data-live-card]')) {
+                el.className = 'text-2xl font-bold font-mono ' +
+                    (state.on_break ? 'text-orange-400 live-work-timer' : 'text-indigo-600 live-work-timer');
+            }
+        });
+
+        document.querySelectorAll('.live-break-timer[data-employee-id]').forEach(function (el) {
+            const id = el.dataset.employeeId;
+            const state = workers[id];
+            if (!state) return;
+            el.textContent = formatSeconds(displayBreakSecs(state, elapsed));
+        });
+
+        document.querySelectorAll('.live-status-label[data-employee-id]').forEach(function (el) {
+            const id = el.dataset.employeeId;
+            const state = workers[id];
+            if (!state) return;
+
+            if (state.on_break) {
+                el.innerHTML = '<i class="fas fa-mug-hot text-xs"></i> On break';
+                el.className = 'live-status-label text-orange-500 font-medium';
+            } else if (state.is_complete) {
+                el.innerHTML = '<i class="fas fa-circle-check text-xs"></i> Full day reached';
+                el.className = 'live-status-label text-green-600 font-medium';
+            } else {
+                el.innerHTML = '<i class="fas fa-circle animate-pulse text-xs"></i> Working';
+                el.className = 'live-status-label text-blue-600 font-medium';
+            }
+        });
+
+        document.querySelectorAll('.live-progress-label[data-employee-id]').forEach(function (el) {
+            const id = el.dataset.employeeId;
+            const state = workers[id];
+            if (!state) return;
+            const net = displayNetSecs(state, elapsed);
+            const pct = state.is_complete ? 100 : Math.min(100, (net / TARGET_SECONDS) * 100);
+            el.textContent = pct.toFixed(1) + '%';
+        });
+    }
+
+    function renderCards() {
+        const grid = document.getElementById('live-working-grid');
+        const countEl = document.getElementById('live-working-count');
+        if (!grid) return;
+
+        const ids = Object.keys(workers);
+        if (countEl) countEl.textContent = '(' + ids.length + ')';
+
+        grid.innerHTML = '';
+
+        if (!ids.length) {
+            grid.innerHTML = '<p id="live-working-empty" class="text-sm text-gray-400 col-span-full py-4 text-center">No employees are checked in right now.</p>';
+            return;
+        }
+
+        ids.forEach(function (id) {
+            const w = workers[id];
+            const card = document.createElement('div');
+            card.className = 'rounded-xl border border-gray-100 bg-gray-50 p-4';
+            card.dataset.liveCard = '';
+            card.dataset.employeeId = id;
+            card.innerHTML =
+                '<div class="flex items-start justify-between gap-2 mb-2">' +
+                    '<div class="min-w-0">' +
+                        '<p class="font-medium text-gray-900 truncate">' + (w.name || '') + '</p>' +
+                        '<p class="text-xs text-gray-500 truncate">' + (w.employee_code || '') + '</p>' +
+                    '</div>' +
+                    '<span class="text-xs text-gray-400 flex-shrink-0">' + (w.check_in_time || '') + '</span>' +
+                '</div>' +
+                '<p class="text-2xl font-bold font-mono text-indigo-600 live-work-timer" data-employee-id="' + id + '">00:00:00</p>' +
+                '<div class="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs text-gray-500">' +
+                    '<span>Break: <span class="live-break-timer font-medium text-orange-500" data-employee-id="' + id + '">00:00:00</span></span>' +
+                    '<span class="live-status-label" data-employee-id="' + id + '">Working</span>' +
+                '</div>' +
+                (w.department ? '<p class="text-xs text-gray-400 mt-2 truncate">' + w.department + '</p>' : '');
+            grid.appendChild(card);
+        });
+    }
+
+    function applyPayload(data) {
+        polledAt = data.server_time ?? Math.floor(Date.now() / 1000);
+        const next = {};
+        (data.employees || []).forEach(function (w) {
+            next[w.employee_id] = {
+                net_seconds: w.net_seconds ?? 0,
+                total_break_seconds: w.total_break_seconds ?? 0,
+                on_break: !!w.on_break,
+                is_complete: !!w.is_complete,
+                progress_percent: w.progress_percent ?? 0,
+                check_in_time: w.check_in_time,
+                name: w.name,
+                employee_code: w.employee_code,
+                department: w.department,
+            };
+        });
+
+        const prevKeys = Object.keys(workers).sort().join(',');
+        Object.keys(workers).forEach(function (k) { delete workers[k]; });
+        Object.assign(workers, next);
+        const nextKeys = Object.keys(workers).sort().join(',');
+
+        if (prevKeys !== nextKeys) {
+            renderCards();
+        }
+    }
+
+    async function pollServer() {
+        try {
+            const url = FILTER_QUERY ? LIVE_URL + '?' + FILTER_QUERY : LIVE_URL;
+            const res = await fetch(url, {
+                headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' },
+            });
+            if (!res.ok) return;
+            applyPayload(await res.json());
+        } catch (e) {
+            // keep extrapolating from last snapshot
+        }
+    }
+
+    updateDom();
+    setInterval(updateDom, 1000);
+    setInterval(pollServer, 30000);
+    pollServer();
+})();
+</script>
+@endpush
+@endif
 
 @else
 

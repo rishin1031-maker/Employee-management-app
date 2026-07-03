@@ -82,8 +82,9 @@ Route::middleware('admin.auth')->prefix('admin')->name('admin.')->group(function
 
     // Attendance
     Route::prefix('attendance')->name('attendance.')->group(function () {
-        Route::get('/',      [AdminAttendanceController::class, 'index'])->name('index');
-        Route::post('/mark', [AdminAttendanceController::class, 'mark'])->name('mark');
+        Route::get('/',              [AdminAttendanceController::class, 'index'])->name('index');
+        Route::get('/live-status',   [AdminAttendanceController::class, 'liveStatus'])->name('live-status');
+        Route::post('/mark',         [AdminAttendanceController::class, 'mark'])->name('mark');
     });
 
     // Notifications ← no extra prefix, name() group handles admin. prefix

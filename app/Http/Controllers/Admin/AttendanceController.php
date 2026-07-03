@@ -43,6 +43,9 @@ class AttendanceController extends Controller
         $departments  = $this->departmentService->getActive();
         $designations = $this->designationService->getActiveWithDepartment();
         $statistics   = $this->attendanceService->getAdminStatistics($filters);
+        $liveWorking  = $activeView === 'daily'
+            ? $this->attendanceService->getAdminLiveWorking($date, $filters)
+            : null;
 
         return view('admin.attendance.index', compact(
             'employees',
@@ -57,7 +60,18 @@ class AttendanceController extends Controller
             'designations',
             'filters',
             'statistics',
+            'liveWorking',
         ));
+    }
+
+    public function liveStatus(Request $request)
+    {
+        $date    = $request->get('date', today()->toDateString());
+        $filters = $request->only(['search', 'department_id', 'designation_id', 'employee_id']);
+
+        return response()->json(
+            $this->attendanceService->getAdminLiveWorking($date, $filters)
+        );
     }
 
     public function mark(Request $request)

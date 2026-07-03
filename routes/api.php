@@ -56,6 +56,9 @@ Route::prefix('v1')->group(function () {
 
         Route::get('attendance/daily', [AdminAttendanceController::class, 'daily']);
         Route::get('attendance/monthly', [AdminAttendanceController::class, 'monthly']);
+        Route::get('attendance/statistics', [AdminAttendanceController::class, 'statistics']);
+        Route::get('attendance/charts', [AdminAttendanceController::class, 'charts']);
+        Route::get('attendance/live-status', [AdminAttendanceController::class, 'liveStatus']);
         Route::post('attendance/mark', [AdminAttendanceController::class, 'mark']);
         Route::post('attendance/breaks', [AdminAttendanceController::class, 'addBreak']);
         Route::delete('attendance/breaks/{break}', [AdminAttendanceController::class, 'deleteBreak']);
@@ -88,6 +91,7 @@ Route::prefix('v1')->group(function () {
             Route::patch('profile/phone', [EmployeeProfileController::class, 'updatePhone']);
 
             Route::get('attendance', [EmployeeAttendanceController::class, 'index']);
+            Route::get('attendance/charts', [EmployeeAttendanceController::class, 'charts']);
             Route::post('attendance/check-in', [EmployeeAttendanceController::class, 'checkIn']);
             Route::post('attendance/check-out', [EmployeeAttendanceController::class, 'checkOut']);
             Route::post('attendance/break/start', [EmployeeAttendanceController::class, 'startBreak']);
