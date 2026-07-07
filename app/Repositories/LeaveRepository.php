@@ -34,11 +34,13 @@ class LeaveRepository extends BaseRepository implements LeaveRepositoryInterface
         return $query->latest()->paginate($perPage)->withQueryString();
     }
 
-    public function getEmployeeLeaves(int $employeeId, int $perPage = 10): LengthAwarePaginator
+    public function getEmployeeLeaves(int $employeeId,array $filters = [], int $perPage = 10): LengthAwarePaginator
     {
         return LeaveRequest::where('employee_id', $employeeId)
-                           ->latest()
-                           ->paginate($perPage);
+                            ->when($filters['status'] ?? null, fn ($q, $status) => $q->where('status', $status))
+                            ->when($filters['type'] ?? null, fn ($q, $type) => $q->where('type', $type))
+                            ->latest()
+                            ->paginate($perPage);
     }
 
     public function getPendingCount(): int

@@ -14,10 +14,17 @@ class LeaveController extends ApiController
 {
     public function __construct(private LeaveService $leaveService) {}
 
-    public function index(): JsonResponse
+    public function index(Request $request): JsonResponse
     {
         $employee = Auth::guard('api_employee')->user();
-        $leaves   = $this->leaveService->getEmployeeLeaves($employee->id);
+
+        $filters = $request->validate([
+            'type' => 'nullable | in:casual,sick,anual',
+            'status' => 'nullable | in:pending,approved,rejected,cancelled',
+            'page' => 'nullable|integer|min:1',
+            'per_page' => 'nullable|integer|min:1|max:100'
+        ]);
+        $leaves   = $this->leaveService->getEmployeeLeaves($employee->id, $filters);
         $balance  = $this->leaveService->getOrCreateBalance($employee->id);
 
         return $this->success([

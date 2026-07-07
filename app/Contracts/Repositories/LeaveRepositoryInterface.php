@@ -10,7 +10,7 @@ use Illuminate\Pagination\LengthAwarePaginator;
 interface LeaveRepositoryInterface extends BaseRepositoryInterface
 {
     public function paginateWithFilters(array $filters, int $perPage = 15): LengthAwarePaginator;
-    public function getEmployeeLeaves(int $employeeId, int $perPage = 10): LengthAwarePaginator;
+    public function getEmployeeLeaves(int $employeeId,array $filters = [], int $perPage = 10): LengthAwarePaginator;
     public function getPendingCount(): int;
     public function getRecentPending(int $limit = 5): Collection;
     public function findOrCreateBalance(int $employeeId, int $year): LeaveBalance;

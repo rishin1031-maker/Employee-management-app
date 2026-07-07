@@ -22,9 +22,9 @@ class LeaveService
         return $this->leaveRepo->paginateWithFilters($filters);
     }
 
-    public function getEmployeeLeaves(int $employeeId): LengthAwarePaginator
+    public function getEmployeeLeaves(int $employeeId,array $filters = []): LengthAwarePaginator
     {
-        return $this->leaveRepo->getEmployeeLeaves($employeeId);
+        return $this->leaveRepo->getEmployeeLeaves($employeeId, $filters);
     }
 
     public function getOrCreateBalance(int $employeeId): LeaveBalance
