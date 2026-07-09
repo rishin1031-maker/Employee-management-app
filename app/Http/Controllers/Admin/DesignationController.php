@@ -35,9 +35,14 @@ class DesignationController extends Controller
 
     public function store(StoreDesignationRequest $request)
     {
-        $this->designationService->create($request->validated());
-        return redirect()->route('admin.designations.index')
-            ->with('success', 'Designation created successfully.');
+        try {
+            $this->designationService->create($request->validated());
+
+            return redirect()->route('admin.designations.index')
+                ->with('success', 'Designation created successfully.');
+        } catch (\Exception $e) {
+            return back()->withInput()->with('error', $this->userFacingMessage($e));
+        }
     }
 
     public function edit(Designation $designation)
@@ -48,9 +53,14 @@ class DesignationController extends Controller
 
     public function update(UpdateDesignationRequest $request, Designation $designation)
     {
-        $this->designationService->update($designation->id, $request->validated());
-        return redirect()->route('admin.designations.index')
-            ->with('success', 'Designation updated successfully.');
+        try {
+            $this->designationService->update($designation->id, $request->validated());
+
+            return redirect()->route('admin.designations.index')
+                ->with('success', 'Designation updated successfully.');
+        } catch (\Exception $e) {
+            return back()->withInput()->with('error', $this->userFacingMessage($e));
+        }
     }
 
     public function destroy(Designation $designation)
@@ -66,8 +76,13 @@ class DesignationController extends Controller
 
     public function toggleStatus(Designation $designation)
     {
-        $this->designationService->toggleStatus($designation->id);
-        return back()->with('success', 'Designation status updated.');
+        try {
+            $this->designationService->toggleStatus($designation->id);
+
+            return back()->with('success', 'Designation status updated.');
+        } catch (\Exception $e) {
+            return back()->with('error', $this->userFacingMessage($e));
+        }
     }
 
     public function quickStore(Request $request)
@@ -77,20 +92,27 @@ class DesignationController extends Controller
             'department_id' => 'required|exists:departments,id',
         ]);
 
-        $designation = $this->designationService->create([
-            'name'          => $data['name'],
-            'department_id' => $data['department_id'],
-            'status'        => 'active',
-        ]);
+        try {
+            $designation = $this->designationService->create([
+                'name'          => $data['name'],
+                'department_id' => $data['department_id'],
+                'status'        => 'active',
+            ]);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Designation created.',
-            'designation' => [
-                'id'            => $designation->id,
-                'name'          => $designation->name,
-                'department_id' => $designation->department_id,
-            ],
-        ]);
+            return response()->json([
+                'success' => true,
+                'message' => 'Designation created.',
+                'designation' => [
+                    'id'            => $designation->id,
+                    'name'          => $designation->name,
+                    'department_id' => $designation->department_id,
+                ],
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $this->userFacingMessage($e),
+            ], 422);
+        }
     }
 }

@@ -40,6 +40,7 @@ class DesignationRepository extends BaseRepository implements DesignationReposit
     public function getActive(): Collection
     {
         return Designation::where('status', 'active')
+                          ->whereHas('department', fn ($q) => $q->where('status', 'active'))
                           ->orderBy('name')
                           ->get();
     }
@@ -48,6 +49,7 @@ class DesignationRepository extends BaseRepository implements DesignationReposit
     {
         return Designation::with('department')
                           ->where('status', 'active')
+                          ->whereHas('department', fn ($q) => $q->where('status', 'active'))
                           ->orderBy('name')
                           ->get();
     }
@@ -59,6 +61,11 @@ class DesignationRepository extends BaseRepository implements DesignationReposit
             'status' => $desig->status === 'active' ? 'inactive' : 'active',
         ]);
         return true;
+    }
+
+    public function syncStatusByDepartment(int $departmentId, string $status): void
+    {
+        Designation::where('department_id', $departmentId)->update(['status' => $status]);
     }
 
     public function hasEmployees(int $id): bool

@@ -11,6 +11,7 @@ use App\Http\Controllers\Api\V1\Admin\PayrollController as AdminPayrollControlle
 use App\Http\Controllers\Api\V1\Admin\SalaryController as AdminSalaryController;
 use App\Http\Controllers\Api\V1\Employee\AttendanceController as EmployeeAttendanceController;
 use App\Http\Controllers\Api\V1\Employee\AuthController as EmployeeAuthController;
+use App\Http\Controllers\Api\V1\Employee\DailyChecklistController as EmployeeDailyChecklistController;
 use App\Http\Controllers\Api\V1\Employee\DashboardController as EmployeeDashboardController;
 use App\Http\Controllers\Api\V1\Employee\LeaveController as EmployeeLeaveController;
 use App\Http\Controllers\Api\V1\Employee\ProfileController as EmployeeProfileController;
@@ -38,6 +39,8 @@ Route::prefix('v1')->group(function () {
         });
 
         Route::get('dashboard', [AdminDashboardController::class, 'index']);
+
+        Route::get('activity-logs', [\App\Http\Controllers\Api\V1\Admin\ActivityLogController::class, 'index']);
 
         Route::apiResource('employees', AdminEmployeeController::class);
         Route::post('employees/{employee}/reset-password', [AdminEmployeeController::class, 'resetPassword']);
@@ -103,6 +106,12 @@ Route::prefix('v1')->group(function () {
             Route::post('leaves', [EmployeeLeaveController::class, 'store']);
             Route::get('leaves/{leave}', [EmployeeLeaveController::class, 'show']);
             Route::delete('leaves/{leave}', [EmployeeLeaveController::class, 'cancel']);
+
+            Route::get('checklist', [EmployeeDailyChecklistController::class, 'index']);
+            Route::post('checklist', [EmployeeDailyChecklistController::class, 'store']);
+            Route::patch('checklist/{checklist}', [EmployeeDailyChecklistController::class, 'update']);
+            Route::post('checklist/{checklist}/toggle', [EmployeeDailyChecklistController::class, 'toggle']);
+            Route::delete('checklist/{checklist}', [EmployeeDailyChecklistController::class, 'destroy']);
 
             Route::get('notifications', [NotificationController::class, 'index']);
             Route::get('notifications/unread-count', [NotificationController::class, 'unreadCount']);

@@ -77,6 +77,11 @@ class Employee extends Authenticatable implements JWTSubject
         return $this->hasMany(Attendance::class);
     }
 
+    public function dailyChecklistItems()
+    {
+        return $this->hasMany(DailyChecklistItem::class)->orderBy('sort_order');
+    }
+
     public function todayAttendance()
     {
         return $this->hasOne(Attendance::class)

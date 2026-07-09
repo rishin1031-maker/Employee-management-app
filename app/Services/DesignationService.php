@@ -3,6 +3,8 @@
 namespace App\Services;
 
 use App\Contracts\Repositories\DesignationRepositoryInterface;
+use App\Models\Department;
+use App\Models\Designation;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Pagination\LengthAwarePaginator;
 
@@ -27,13 +29,25 @@ class DesignationService
         return $this->designationRepo->getActiveWithDepartment();
     }
 
-    public function create(array $data): \App\Models\Designation
+    public function create(array $data): Designation
     {
+        $this->ensureDepartmentAllowsActiveStatus(
+            (int) $data['department_id'],
+            $data['status'] ?? 'active'
+        );
+
         return $this->designationRepo->create($data);
     }
 
-    public function update(int $id, array $data): \App\Models\Designation
+    public function update(int $id, array $data): Designation
     {
+        $designation = $this->designationRepo->findWithDepartment($id);
+
+        $this->ensureDepartmentAllowsActiveStatus(
+            (int) ($data['department_id'] ?? $designation->department_id),
+            $data['status'] ?? $designation->status
+        );
+
         return $this->designationRepo->update($id, $data);
     }
 
@@ -47,7 +61,25 @@ class DesignationService
 
     public function toggleStatus(int $id): bool
     {
+        $designation = $this->designationRepo->findWithDepartment($id);
+        $newStatus = $designation->status === 'active' ? 'inactive' : 'active';
+
+        $this->ensureDepartmentAllowsActiveStatus((int) $designation->department_id, $newStatus);
+
         return $this->designationRepo->toggleStatus($id);
+    }
+
+    private function ensureDepartmentAllowsActiveStatus(int $departmentId, string $status): void
+    {
+        if ($status !== 'active') {
+            return;
+        }
+
+        $department = Department::findOrFail($departmentId);
+
+        if ($department->status !== 'active') {
+            throw new \Exception('Cannot activate designation while its department is inactive.');
+        }
     }
 
     public function getWithDepartment(int $id): \App\Models\Designation

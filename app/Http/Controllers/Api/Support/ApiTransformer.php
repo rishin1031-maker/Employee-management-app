@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\Support;
 use App\Models\Admin;
 use App\Models\Attendance;
 use App\Models\AttendanceBreak;
+use App\Models\DailyChecklistItem;
 use App\Models\Department;
 use App\Models\Designation;
 use App\Models\Employee;
@@ -184,6 +185,21 @@ class ApiTransformer
             'data'       => $notification->data,
             'read_at'    => $notification->read_at?->toIso8601String(),
             'created_at' => $notification->created_at?->toIso8601String(),
+        ];
+    }
+
+    public static function checklistItem(DailyChecklistItem $item): array
+    {
+        return [
+            'id'           => $item->id,
+            'employee_id'  => $item->employee_id,
+            'task_date'    => $item->task_date?->toDateString(),
+            'title'        => $item->title,
+            'is_completed' => (bool) $item->is_completed,
+            'completed_at' => $item->completed_at?->toIso8601String(),
+            'sort_order'   => (int) $item->sort_order,
+            'created_at'   => $item->created_at?->toIso8601String(),
+            'updated_at'   => $item->updated_at?->toIso8601String(),
         ];
     }
 

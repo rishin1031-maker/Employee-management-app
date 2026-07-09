@@ -72,7 +72,7 @@ class DashboardService
         }
 
         return [
-            'employee'          => $employee->load(['department', 'designation']),
+            'employee'          => $employee->load(['department', 'designation', 'salary']),
             'today_attendance'  => $today,
             'live_stats'        => $this->attendanceService->getLiveStats($today),
             'leave_balance'     => $this->leaveService->getOrCreateBalance($employee->id),

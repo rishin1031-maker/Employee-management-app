@@ -28,13 +28,17 @@ class DesignationController extends ApiController
 
     public function store(StoreDesignationRequest $request): JsonResponse
     {
-        $designation = $this->designationService->create($request->validated());
+        try {
+            $designation = $this->designationService->create($request->validated());
 
-        return $this->success(
-            ApiTransformer::designation($this->designationService->getWithDepartment($designation->id)),
-            'Designation created.',
-            201
-        );
+            return $this->success(
+                ApiTransformer::designation($this->designationService->getWithDepartment($designation->id)),
+                'Designation created.',
+                201
+            );
+        } catch (\Exception $e) {
+            return $this->fromException($e);
+        }
     }
 
     public function show(Designation $designation): JsonResponse
@@ -46,12 +50,16 @@ class DesignationController extends ApiController
 
     public function update(UpdateDesignationRequest $request, Designation $designation): JsonResponse
     {
-        $this->designationService->update($designation->id, $request->validated());
+        try {
+            $this->designationService->update($designation->id, $request->validated());
 
-        return $this->success(
-            ApiTransformer::designation($this->designationService->getWithDepartment($designation->id)),
-            'Designation updated.'
-        );
+            return $this->success(
+                ApiTransformer::designation($this->designationService->getWithDepartment($designation->id)),
+                'Designation updated.'
+            );
+        } catch (\Exception $e) {
+            return $this->fromException($e);
+        }
     }
 
     public function destroy(Designation $designation): JsonResponse
@@ -67,11 +75,15 @@ class DesignationController extends ApiController
 
     public function toggleStatus(Designation $designation): JsonResponse
     {
-        $this->designationService->toggleStatus($designation->id);
+        try {
+            $this->designationService->toggleStatus($designation->id);
 
-        return $this->success(
-            ApiTransformer::designation($this->designationService->getWithDetails($designation->id)),
-            'Designation status updated.'
-        );
+            return $this->success(
+                ApiTransformer::designation($this->designationService->getWithDetails($designation->id)),
+                'Designation status updated.'
+            );
+        } catch (\Exception $e) {
+            return $this->fromException($e);
+        }
     }
 }
