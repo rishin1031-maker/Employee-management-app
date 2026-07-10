@@ -15,6 +15,8 @@ use App\Http\Controllers\Api\V1\Employee\DailyChecklistController as EmployeeDai
 use App\Http\Controllers\Api\V1\Employee\DashboardController as EmployeeDashboardController;
 use App\Http\Controllers\Api\V1\Employee\LeaveController as EmployeeLeaveController;
 use App\Http\Controllers\Api\V1\Employee\ProfileController as EmployeeProfileController;
+use App\Http\Controllers\Api\V1\Admin\SystemSettingsController as AdminSystemSettingsController;
+use App\Http\Controllers\Api\V1\Employee\ContinuousSessionPolicyController as EmployeeContinuousSessionPolicyController;
 use App\Http\Controllers\Api\V1\NotificationController;
 use Illuminate\Support\Facades\Route;
 
@@ -72,6 +74,9 @@ Route::prefix('v1')->group(function () {
 
         Route::get('payroll', [AdminPayrollController::class, 'index']);
 
+        Route::get('settings', [AdminSystemSettingsController::class, 'show']);
+        Route::match(['put', 'patch'], 'settings', [AdminSystemSettingsController::class, 'update']);
+
         Route::get('notifications', [NotificationController::class, 'index']);
         Route::get('notifications/unread-count', [NotificationController::class, 'unreadCount']);
         Route::post('notifications/read-all', [NotificationController::class, 'markAllRead']);
@@ -100,6 +105,8 @@ Route::prefix('v1')->group(function () {
             Route::post('attendance/break/start', [EmployeeAttendanceController::class, 'startBreak']);
             Route::post('attendance/break/end', [EmployeeAttendanceController::class, 'endBreak']);
             Route::get('attendance/live-status', [EmployeeAttendanceController::class, 'liveStatus']);
+
+            Route::get('policy/continuous-session', [EmployeeContinuousSessionPolicyController::class, 'show']);
 
             Route::get('leaves', [EmployeeLeaveController::class, 'index']);
             Route::get('leaves/balance', [EmployeeLeaveController::class, 'balance']);

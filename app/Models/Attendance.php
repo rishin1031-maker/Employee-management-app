@@ -10,12 +10,15 @@ class Attendance extends Model
     protected $fillable = [
         'employee_id', 'date', 'check_in', 'check_out',
         'status', 'marked_by', 'note',
+        'continuous_reminder_sent_at', 'continuous_session_anchor_at',
     ];
 
     protected $casts = [
-        'date'      => 'date',
-        'check_in'  => 'datetime',
+        'date' => 'date',
+        'check_in' => 'datetime',
         'check_out' => 'datetime',
+        'continuous_reminder_sent_at' => 'datetime',
+        'continuous_session_anchor_at' => 'datetime',
     ];
 
     public function employee()

@@ -120,6 +120,7 @@ class AttendanceRepository extends BaseRepository implements AttendanceRepositor
             'check_in'    => now(),
             'status'      => 'present',
             'marked_by'   => 'self',
+            'continuous_session_anchor_at' => now(),
         ]);
     }
 

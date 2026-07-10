@@ -11,7 +11,8 @@ use Illuminate\Support\Facades\DB;
 class AttendanceService
 {
     public function __construct(
-        private AttendanceRepositoryInterface $attendanceRepo
+        private AttendanceRepositoryInterface $attendanceRepo,
+        private ContinuousSessionService $continuousSessionService,
     ) {}
 
     public function checkIn(int $employeeId): Attendance
@@ -455,6 +456,7 @@ class AttendanceService
             'break_count'             => $stats['break_count'],
             'active_break_since'      => $stats['active_break_since'],
             'target_seconds'          => AttendanceTimeCalculator::TARGET_SECONDS,
+            ...$this->continuousSessionService->liveFields($attendance),
         ];
     }
 

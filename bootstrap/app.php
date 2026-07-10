@@ -27,6 +27,9 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withProviders([                                      // ← ADD THIS
         App\Providers\RepositoryServiceProvider::class,
     ])
+    ->withSchedule(function (\Illuminate\Console\Scheduling\Schedule $schedule) {
+        $schedule->command('attendance:enforce-continuous-session')->everyMinute();
+    })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(
             fn (Request $request) => $request->is('api/*'),
