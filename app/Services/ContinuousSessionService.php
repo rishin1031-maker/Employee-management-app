@@ -54,6 +54,27 @@ class ContinuousSessionService
     }
 
     /**
+     * Enforce reminder / auto-checkout for a single open attendance row.
+     * Safe to call on every live-status poll.
+     *
+     * @return array{reminder: bool, auto_checkout: bool}
+     */
+    public function enforceForAttendance(Attendance $attendance): array
+    {
+        if (!$this->policy->enabled()) {
+            return ['reminder' => false, 'auto_checkout' => false];
+        }
+
+        if (!$attendance->check_in || $attendance->check_out) {
+            return ['reminder' => false, 'auto_checkout' => false];
+        }
+
+        $attendance->loadMissing(['breaks', 'employee']);
+
+        return $this->enforceOne($attendance);
+    }
+
+    /**
      * @return array{reminders: int, auto_checkouts: int}
      */
     public function enforce(): array
@@ -97,13 +118,14 @@ class ContinuousSessionService
 
         if ($anchor && (
             !$attendance->continuous_session_anchor_at
-            || abs($attendance->continuous_session_anchor_at->diffInSeconds($anchor)) > 1
+            || abs((int) $attendance->continuous_session_anchor_at->diffInSeconds($anchor)) > 1
         )) {
             $attendance->forceFill([
                 'continuous_session_anchor_at' => $anchor,
                 'continuous_reminder_sent_at' => null,
             ])->save();
             $attendance->refresh();
+            $attendance->loadMissing(['breaks', 'employee']);
         }
 
         if ($calc['on_break']) {

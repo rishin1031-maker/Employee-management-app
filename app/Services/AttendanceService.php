@@ -468,6 +468,18 @@ class AttendanceService
             return ['checked_in' => false];
         }
 
+        $attendance->loadMissing(['breaks', 'employee']);
+
+        // Enforce on every poll so auto-checkout works without relying on the scheduler alone
+        $enforced = $this->continuousSessionService->enforceForAttendance($attendance);
+        if ($enforced['auto_checkout']) {
+            $attendance = $this->attendanceRepo->getTodayForEmployee($employeeId);
+            if (!$attendance) {
+                return ['checked_in' => false];
+            }
+            $attendance->loadMissing('breaks');
+        }
+
         $stats = $this->getLiveStats($attendance);
 
         return [
@@ -475,6 +487,7 @@ class AttendanceService
             'checked_out'   => $attendance->check_out !== null,
             'check_in_time' => $attendance->check_in->format('h:i A'),
             'server_time'   => now()->timestamp,
+            'auto_checked_out' => $enforced['auto_checkout'],
             ...$this->buildLivePayload($attendance, $stats),
         ];
     }

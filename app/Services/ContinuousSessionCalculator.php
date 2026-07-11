@@ -46,7 +46,7 @@ class ContinuousSessionCalculator
         $onBreak = $activeBreak !== null;
 
         $endsAt = $onBreak ? $activeBreak->break_out : $asOf;
-        $continuousSeconds = (int) max(0, $anchor->diffInSeconds($endsAt));
+        $continuousSeconds = (int) max(0, $anchor->diffInSeconds($endsAt, false));
 
         $qualifies = false;
         if ($onBreak && $activeBreak->break_out) {
